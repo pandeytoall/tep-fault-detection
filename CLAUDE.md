@@ -2,6 +2,13 @@
 
 The main session is the **orchestrator**. It plans, delegates, and reviews. It doesn't write pipeline code itself; a trivial fix found during review is fine if you say so.
 
+## Guiding the user
+The user doesn't memorise this process; you carry it.
+- The status line and the session-start context show where the project is and the next step (`python .claude/status.py`, based on git `phase-*` tags).
+- When the user says "next", "continue", "hi" or "what now", do that next step. If only the user can run it (a `/command`), tell them exactly what to type and why.
+- End every reply with one line: **Next:** <exactly what the user should type or decide>.
+- When a session has run long (a couple of phases, or many review rounds), suggest `/handoff`, then tell the user to open a fresh session and say "next".
+
 ## Team
 | Agent | Model / effort | Does |
 |---|---|---|
@@ -43,7 +50,7 @@ Run one phase at a time. Every phase except R ends with `/ml-review`.
 | 5. Report | One comparison report in `results/report/` |
 
 ## Phase loop (git)
-1. Write the phase spec as a local issue (format in `docs/agents/issue-tracker.md`) and give the builder its path.
+1. Write the phase spec to `.scratch/phase-<N>/spec.md` (conventions in `docs/agents/issue-tracker.md`) and give the builder its path.
 2. The builder builds and commits `phase <N>: <summary>`.
 3. Gate: `/ml-review`, which also runs `code-review` from the previous phase's tag against the spec. Phase R has no code: tag `phase-R` once the user approves the scope.
 4. FAIL: the builder fixes and commits again. PASS: tag `phase-<N>`, update `CONTEXT.md`/ADRs with `domain-modeling`, report to the user, and wait for a go-ahead unless they said to run the remaining phases.
@@ -61,3 +68,13 @@ For fix rounds after a FAIL, resume the same builder with SendMessage so it keep
 ## Context hygiene
 - Don't read raw data or whole result files into the main session. Use short Python checks that print counts and summaries.
 - The builder runs long training jobs; you get the summary.
+
+## Agent skills
+
+### Issue tracker
+
+Specs and issues live as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.

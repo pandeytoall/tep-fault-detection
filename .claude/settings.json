@@ -1,0 +1,19 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "python \"D:/ML model training/.claude/status.py\" --line"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"D:/ML model training/.claude/status.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

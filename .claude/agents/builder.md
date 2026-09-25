@@ -17,7 +17,7 @@ If the spec is ambiguous, make the smallest reasonable assumption and list it in
 ## How to work
 - Tests first: follow the preloaded `tdd` skill for any logic (labels, splits, metrics, thresholds).
 - If a run fails or numbers look wrong, use the `mattpocock-skills:diagnosing-bugs` skill before changing code.
-- The spec is a file under `.scratch/`; read it first.
+- Your spec is `.scratch/phase-<N>/spec.md`; read it first.
 - When tests pass, commit: `git add -A && git commit -m "phase <N>: <summary>"`. Never tag, push, or rewrite history.
 - Minimal code: nothing the spec didn't ask for. Put shared logic in `src/` modules; don't copy code between scripts.
 - The `tep-data` rules override anything in the spec that contradicts them. Flag the conflict in your report.
