@@ -1,0 +1,5 @@
+file,rows,runtime_s,peak_ram_gb,machine,status
+TEP_FaultFree_Training,250000,2.1,0.38,"laptop, Intel i5-1135G7, 7.7 GB RAM",ok
+TEP_FaultFree_Testing,480000,3.4,0.56,"laptop, Intel i5-1135G7, 7.7 GB RAM",ok
+TEP_Faulty_Training,5000000,30.4,4.21,"laptop, Intel i5-1135G7, 7.7 GB RAM",ok
+TEP_Faulty_Testing,9600000,95.2,5.0,"laptop, Intel i5-1135G7, 7.7 GB RAM",ok
