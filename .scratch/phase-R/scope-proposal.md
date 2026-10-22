@@ -8,7 +8,7 @@ Evidence: `research/tep-benchmarks.md`. Approve or change via `/grill-with-docs`
 - Rieth-data papers train supervised models on a few runs per fault and test on all 500 (SensorSCAN, arXiv:2208.08879).
 
 ## Gap
-No source gives per-fault PCA T²/SPE FDR at 1% FAR on the Rieth data. The only Rieth PCA number (TPR 0.36) is PCA + k-means clustering, not T²/SPE (checked in the paper). The classic tables (Chiang/Russell/Braatz 2000, Yin 2012) are paywalled and use the original single-run data. So our phase 3 PCA result becomes the reference.
+No source gives per-fault PCA T²/SPE FDR at 1% FAR on the Rieth data. The only Rieth PCA number (TPR 0.36) is PCA + k-means clustering, not T²/SPE (checked in the paper). The classic tables (Chiang/Russell/Braatz 2000, Yin 2012) are paywalled and use the original single-run data. So our phase 2 PCA result becomes the reference.
 
 ## Decisions
 | # | Decision | Recommended | Alternatives |
@@ -37,3 +37,20 @@ Open scope questions, alongside D1-D8. Private questions (posts, logistics) are 
 
 ## G8 decided: where runs execute
 Brief and critic review (AGREE WITH CHANGES): `.scratch/phase-R/decision-cloud.md`. See the `Where runs execute` section in `CLAUDE.md`.
+
+## Agreed scope (2026-10-22, approved by the user after grilling and a critic review)
+The rules (run budget, alarm limits, tracks, lags, delay, unseen-fault test) are in the `tep-data` skill; the phases are in `CLAUDE.md`; the terms are in `CONTEXT.md`; the reasons are in `docs/adr/0001` and `0002`. In short:
+- D1 Two tracks, reported separately. D3 Supervised = one 21-class model (alarm score = 1 - P(normal)).
+- D2/G1/G3 Unsupervised: PCA, DPCA, Isolation Forest, a small dense autoencoder. Supervised: HistGradientBoosting. ICA, LSTM autoencoder and 1D-CNN are in the backlog.
+- D4/G2 MSPC first (phase 2), ML second (phase 3).
+- D5 FAR 1% headline, 5% secondary; limits set on 100 held-back normal training runs; MSPC also at the textbook 99% limit.
+- D6 One lag window L for all lagged models, Ku et al. (1995) rule on normal runs, L = 0-5.
+- G4 Detection delay to the first 3-in-a-row alarm after onset; median over detected runs, share never detected, fault-free baseline.
+- D7 400/100 normal training runs; 50 faulty training runs per fault for supervised training; 20 other faulty training runs per fault for development; final scores on all test runs. Testing files are touched once.
+- G5 Extra steps folded into phases 1, 4 and 5. G6 One shared interface per model (fit, score a run, alarm limit).
+- Unseen-fault test: faults 1, 8, 13, 14, 16 (the lowest of each Downs & Vogel type, skipping 3/9/15), checked in the second research pass.
+- D8 Second research pass runs during phase 0 (classic per-fault PCA/DPCA tables; fault-type groupings).
+- If behind: cut the autoencoder, then the unseen-fault test. Track B (the assistant) comes after phase 5.
+- The plan changes when results or limits demand it: propose, record here under Comments, then continue.
+
+## Comments

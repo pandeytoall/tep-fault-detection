@@ -64,15 +64,17 @@ Run one phase at a time. Every phase except R ends with `/ml-review`.
 |---|---|
 | R. Research | Researcher surveys TEP fault-detection benchmarks: which fast CPU methods work, achievable FDR at about 1% FAR, how papers handle faults 3/9/15. Orchestrator turns this into a proposed scope; after grilling, `critic` (opus, high) checks it. **The user approves the scope.** |
 | 0. Setup | venv and pinned `requirements.txt`, download the 4 files, convert to parquet, **measure peak RAM of each conversion on the laptop** (decides how much runs in the cloud), cross-platform paths and hooks, one cloud smoke test |
-| 1. Labels and split | Labeling and run-level split, with tests |
-| 2. ML models | The approved models, thresholds calibrated to the agreed FAR |
-| 3. MSPC | PCA T² / SPE at 99% limits (plus any approved variant), same data and metrics |
-| 4. Diagnosis | Contribution plots per fault with real variable names |
-| 5. Report | One comparison report in `results/report/` |
+| 1. Labels and split | Labeling and run-level split; the 52 variables mapped to plant units, with a normal vs fault 1 plot; shared `evaluate.py` (FDR, FAR, detection delay, `results/scorecard.csv`) proven on a dummy model; all with tests |
+| 2. MSPC | PCA T² / SPE (the reference) and DPCA, at the agreed alarm limits plus the textbook 99% limit |
+| 3. ML models | Isolation Forest, autoencoder, gradient boosting (21-class), and the unseen-fault test. If behind, cut the autoencoder first, then the unseen-fault test |
+| 4. Diagnosis | Contribution plots per fault with real variable names; why faults 3, 9, 15 hide |
+| 5. Report | One comparison report in `results/report/`, plus one operator-style report for one fault |
+
+The agreed scope is in `.scratch/phase-R/scope-proposal.md` (Agreed scope), with ADRs in `docs/adr/`. The plan is allowed to change: when a result or a limit breaks it, propose the change to the user, record it in the scope file's Comments (and the ADR if one is affected), then carry on. After phase 5 comes Track B, the Claude + MCP assistant that calls the models.
 
 ## Where runs execute
 Decision G8 (`.scratch/phase-R/decision-cloud.md`): the laptop by default, a Claude Code cloud session (16 GB RAM, no GPU, nothing persists) when the laptop can't do the job or parallel sessions save real time.
-- Laptop: grilling, specs, `/ml-review`, posts, and building each phase on a seed-42 subset of runs.
+- Laptop: grilling, specs, `/ml-review`, posts, and building each phase on the development runs (training files only).
 - Cloud: full-data runs the laptop can't hold (decided by the phase 0 measurement), long sweeps, and independent phases built in parallel on separate branches. Give each cloud session its phase spec; it pushes code and `results/` only, never data.
 - Headline metrics for every model come from one machine; each results file records which.
 - Before any cloud run: phase 0 has delivered cross-platform paths and hooks, pinned `requirements.txt`, the download in the cloud setup script, and builder skills available in the cloud. The user has set up the environment (Custom network: `dataverse.harvard.edu`, `dvn-cloud-iqss.s3.amazonaws.com`).

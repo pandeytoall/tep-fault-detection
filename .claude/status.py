@@ -11,9 +11,9 @@ PHASES = [
     ("R", "research & scope"),
     ("0", "setup & data"),
     ("1", "labels & split"),
-    ("2", "ML models"),
-    ("3", "MSPC"),
-    ("4", "contribution plots"),
+    ("2", "MSPC"),
+    ("3", "ML models"),
+    ("4", "diagnosis"),
     ("5", "report"),
 ]
 

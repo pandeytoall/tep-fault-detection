@@ -35,7 +35,7 @@ def test_research_notes_ready_asks_for_grilling():
 
 def test_first_untagged_phase_is_current():
     where, _ = status.next_step(_root(), {"phase-R", "phase-0", "phase-1"})
-    assert where == "Phase 2: ML models"
+    assert where == "Phase 2: MSPC"
 
 
 def test_all_phases_tagged_is_done():

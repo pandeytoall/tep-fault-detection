@@ -28,8 +28,15 @@ Samples before onset in faulty runs are normal operation.
 - Fit and tune only on `*_Training` files. `*_Testing` files are used only for final metrics.
 - Validation splits are by `simulationRun`, never by random rows (samples within a run are autocorrelated).
 - Fit scalers/PCA on training data only (MSPC: normal training data only).
-- Compare models at equal false-alarm rate: set each model's alarm threshold on validation normal data so FAR is about 1% (MSPC: 99% control limits). The research phase may change this target; the user decides.
-- Report per fault: FDR (share of post-onset samples flagged). Overall: mean FDR with and without faults 3, 9, 15; FAR on `TEP_FaultFree_Testing`; train time; peak RAM.
+- Run budget (fixed seed-42 run IDs, saved with the results):
+  - FaultFree_Training: 400 runs fit the models; 100 are held back for alarm limits (50 of them also tune the supervised model).
+  - Faulty_Training: 50 runs per fault train the supervised model; 20 other runs per fault are the development and tuning runs.
+  - Testing files: all runs, once, for the final scorecard.
+- Alarm limits: set on the 100 held-back normal runs at two FAR targets, 1% (headline, used for ranking) and 5% (secondary). MSPC also reports the textbook 99% limit.
+- Two tracks, separate tables, never ranked together: unsupervised (PCA, DPCA, Isolation Forest, autoencoder; normal runs only) and supervised (HistGradientBoosting, 21 classes, alarm score = 1 - P(normal), built-in early stopping off).
+- Lag window L: one value for DPCA and all lagged models, chosen on normal training runs only with the Ku et al. (1995) rule from L = 0-5. Lags look back within one run; drop each run's first L samples from all counts. PCA uses no lags.
+- Unseen-fault test: retrain the supervised model without faults 1, 8, 13, 14, 16; compare with the full supervised model and PCA on those faults.
+- Report per fault: FDR (share of post-onset samples flagged, per sample) and detection delay (onset to the third alarm of the first 3-in-a-row after onset; median over detected runs, plus the share never detected, next to the 3-in-a-row rate on fault-free test runs after sample 160). Overall: mean FDR with and without faults 3, 9, 15; FAR on `TEP_FaultFree_Testing`; train time; peak RAM. All rows go in `results/scorecard.csv`.
 - Headline metrics for all models come from one machine (laptop or cloud); every results file records the machine. Subsets are a seed-42 choice of `simulationRun` IDs, saved with the results.
 - Faults 3, 9, 15 are near-undetectable in the literature. High FDR on them means suspect leakage, not a breakthrough.
 
