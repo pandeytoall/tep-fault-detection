@@ -126,3 +126,67 @@ def test_rank_shifts_ignores_constant_pre_stretch():
                         "xmeas_2": np.r_[np.tile([1.0, -1.0], 10), np.full(20, 1.0)]})
     ranked = data.rank_shifts(run, ["xmeas_1", "xmeas_2"], onset=20)
     assert list(ranked.index) == ["xmeas_2"]
+
+
+# --- review fixes -----------------------------------------------------------
+def test_onset_lookup():
+    assert data.onset_for("TEP_FaultFree_Training") == 20
+    assert data.onset_for("TEP_Faulty_Training") == 20
+    assert data.onset_for("TEP_FaultFree_Testing") == 160
+    assert data.onset_for("TEP_Faulty_Testing") == 160
+
+
+def test_samples_per_run_and_interval():
+    assert data.FILES["TEP_Faulty_Training"]["samples"] == 500
+    assert data.FILES["TEP_Faulty_Testing"]["samples"] == 960
+    assert data.HOURS_PER_SAMPLE == pytest.approx(3 / 60)
+
+
+def test_load_run_selects_one_run(tmp_path):
+    df = pd.concat([_synthetic(4).assign(faultNumber=f, simulationRun=r) for f in (0, 1) for r in (1, 2)])
+    df["xmeas_1"] = np.arange(len(df), dtype=float)
+    cast = data.cast_frame(df.copy())
+    cast.to_parquet(tmp_path / "TEP_Faulty_Training.parquet")
+    run = data.load_run("TEP_Faulty_Training", 1, 2, processed_dir=tmp_path)
+    assert list(run["sample"]) == [1, 2, 3, 4]
+    assert list(run["xmeas_1"]) == [12.0, 13.0, 14.0, 15.0]  # 4th block of 4 rows: indices 12..15
+
+
+def test_row_status_flags_mismatch():
+    assert data.row_status("ok", "TEP_FaultFree_Training", 250_000) == "ok"
+    assert data.row_status("ok", "TEP_FaultFree_Training", 249_999) == "row_mismatch"
+    assert data.row_status("over_limit", "TEP_FaultFree_Training", "") == "over_limit"
+    assert data.row_status("error", "TEP_FaultFree_Training", "") == "error"
+
+
+def test_machine_label_has_no_identifiers():
+    label = data.machine_label("11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz", 7.73 * 1024 ** 3)
+    assert label == "laptop, Intel i5-1135G7, 7.7 GB RAM"
+    assert data.machine_label("", 8 * 1024 ** 3) == "laptop, unknown CPU, 8.0 GB RAM"
+
+
+def test_peak_after_onset_finds_first_sample_near_extreme():
+    samples = np.arange(1, 11)
+    values = [10, 10, 10, 20, 50, 99.8, 100, 60, 100, 30]  # onset 3: pre mean 10, extreme 100 (up)
+    run = pd.DataFrame({"sample": samples, "v": values})
+    sample, value = data.peak_after_onset(run, "v", onset=3)
+    assert sample == 6 and value == 99.8  # first within 0.5 % of 100
+
+
+def test_peak_after_onset_handles_downward_fault():
+    run = pd.DataFrame({"sample": np.arange(1, 9), "v": [10, 10, 10, 5, 0.0, 1, 0.0, 3]})
+    sample, value = data.peak_after_onset(run, "v", onset=3)
+    assert sample == 5 and value == 0.0
+
+
+def test_is_up_to_date(tmp_path):
+    files = {"a": {"rows": 6}}
+    raw, proc = tmp_path / "raw", tmp_path / "proc"
+    raw.mkdir(), proc.mkdir()
+    assert not data.is_up_to_date(raw_dir=raw, processed_dir=proc, files=files)       # nothing there
+    (raw / "a.RData").write_bytes(b"x")
+    assert not data.is_up_to_date(raw_dir=raw, processed_dir=proc, files=files)       # no parquet
+    data.cast_frame(_synthetic(5)).to_parquet(proc / "a.parquet")
+    assert not data.is_up_to_date(raw_dir=raw, processed_dir=proc, files=files)       # wrong row count
+    data.cast_frame(_synthetic(6)).to_parquet(proc / "a.parquet")
+    assert data.is_up_to_date(raw_dir=raw, processed_dir=proc, files=files)

@@ -8,6 +8,7 @@ import hashlib
 import json
 import multiprocessing as mp
 import os
+import re
 import time
 import urllib.request
 from pathlib import Path
@@ -23,13 +24,24 @@ DOI = "doi:10.7910/DVN/6C3JR1"
 LIST_URL = f"https://dataverse.harvard.edu/api/datasets/:persistentId/versions/:latest/files?persistentId={DOI}"
 FILE_URL = "https://dataverse.harvard.edu/api/access/datafile/{id}"
 
-# Smallest first. Rows from the tep-data skill.
+ROOT = Path(__file__).resolve().parent.parent
+RAW = ROOT / "data" / "raw"
+PROCESSED = ROOT / "data" / "processed"
+
+# Smallest first. Rows and samples per run from the tep-data skill.
 FILES = {
-    "TEP_FaultFree_Training": {"id": 3031241, "rows": 250_000},
-    "TEP_FaultFree_Testing": {"id": 3031240, "rows": 480_000},
-    "TEP_Faulty_Training": {"id": 3031242, "rows": 5_000_000},
-    "TEP_Faulty_Testing": {"id": 3031243, "rows": 9_600_000},
+    "TEP_FaultFree_Training": {"id": 3031241, "rows": 250_000, "samples": 500},
+    "TEP_FaultFree_Testing": {"id": 3031240, "rows": 480_000, "samples": 960},
+    "TEP_Faulty_Training": {"id": 3031242, "rows": 5_000_000, "samples": 500},
+    "TEP_Faulty_Testing": {"id": 3031243, "rows": 9_600_000, "samples": 960},
 }
+HOURS_PER_SAMPLE = 3 / 60  # one sample every 3 minutes
+ONSET = {"Training": 20, "Testing": 160}  # fault starts after this sample (1 h / 8 h)
+
+
+def onset_for(name):
+    """Last normal sample of a faulty run: 20 for *_Training files, 160 for *_Testing files."""
+    return ONSET[name.rsplit("_", 1)[1]]
 
 ID_COLUMNS = ["faultNumber", "simulationRun", "sample"]
 VARIABLES = [f"xmeas_{i}" for i in range(1, 42)] + [f"xmv_{i}" for i in range(1, 12)]
@@ -191,6 +203,36 @@ def run_guarded(target, args, limit_gb, poll_s=0.02):
     return status, peak / GB
 
 
+def load_run(name, fault, run, processed_dir=PROCESSED):
+    """One simulation run (sample + 52 variables) from the processed parquet."""
+    return pq.read_table(Path(processed_dir) / f"{name}.parquet", columns=["sample"] + VARIABLES,
+                         filters=[("faultNumber", "=", fault), ("simulationRun", "=", run)]).to_pandas()
+
+
+def row_status(status, name, rows):
+    """Downgrade an 'ok' conversion to 'row_mismatch' if its row count differs from FILES[name]['rows']."""
+    if status == "ok" and rows != FILES[name]["rows"]:
+        return "row_mismatch"
+    return status
+
+
+def machine_label(cpu_name, ram_bytes):
+    """Non-identifying machine label: CPU model and RAM only (no hostname, user or paths)."""
+    m = re.search(r"i[3579]-[0-9]+[A-Z0-9]*", cpu_name)
+    cpu = f"Intel {m.group(0)}" if m else "unknown CPU"
+    return f"laptop, {cpu}, {ram_bytes / GB:.1f} GB RAM"
+
+
+def cpu_name():
+    """CPU model string from the Windows registry ('' if unavailable)."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as k:
+            return winreg.QueryValueEx(k, "ProcessorNameString")[0]
+    except (ImportError, OSError):
+        return ""
+
+
 # --- fault shift ranking ----------------------------------------------------
 def rank_shifts(run, variables, onset):
     """|mean after onset - mean before| / std before, sorted descending.
@@ -203,3 +245,27 @@ def rank_shifts(run, variables, onset):
     std = pre.std(ddof=1)
     shift = ((post.mean() - pre.mean()).abs() / std).where(std > 0).dropna()
     return shift.sort_values(ascending=False)
+
+
+def peak_after_onset(run, var, onset, tol=0.005):
+    """(sample, value) of the first post-onset sample within tol (relative) of the extreme value.
+
+    The extreme is the post-onset value furthest from the pre-onset mean.
+    """
+    pre_mean = run.loc[run["sample"] <= onset, var].mean()
+    after = run[run["sample"] > onset]
+    extreme = after.loc[(after[var] - pre_mean).abs().idxmax(), var]
+    near = after[(after[var] - extreme).abs() <= tol * abs(extreme)]
+    first = near.iloc[0]
+    return int(first["sample"]), float(first[var])
+
+
+def is_up_to_date(names=None, raw_dir=RAW, processed_dir=PROCESSED, files=FILES):
+    """True if every raw file exists and every parquet exists with the expected row count (no network)."""
+    for name in names or files:
+        raw, parquet = Path(raw_dir) / f"{name}.RData", Path(processed_dir) / f"{name}.parquet"
+        if not raw.exists() or not parquet.exists():
+            return False
+        if pq.read_metadata(parquet).num_rows != files[name]["rows"]:
+            return False
+    return True
