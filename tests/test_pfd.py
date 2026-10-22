@@ -140,7 +140,7 @@ class TestStyle(unittest.TestCase):
     def test_only_three_font_sizes_and_units_at_least_18(self):
         root = _root()
         sizes = {int(t.get("font-size")) for t in root.iter(NS + "text")}
-        self.assertEqual(sizes, {14, 18, 32})
+        self.assertEqual(sizes, {16, 18, 32})
         for g in root.iter(NS + "g"):
             if g.get("class") == "unit":
                 for t in g.iter(NS + "text"):

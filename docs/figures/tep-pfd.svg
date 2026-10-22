@@ -2,23 +2,23 @@
   <style>
     .stream { fill: none; stroke-width: 3; }
     .legend-line { fill: none; stroke-width: 3; }
-    .stream-gas { stroke: #90A4AE; stroke-dasharray: 10 4; }
+    .stream-gas { stroke: #607D8B; stroke-dasharray: 10 4; stroke-width: 3.5; }
     .stream-process { stroke: #37474F; }
     .stream-liquid { stroke: #1E88E5; }
     .stream-thermal { stroke: #EF6C00; }
-    .stream-recycle { stroke: #6A1B9A; stroke-dasharray: 6 4; }
-    .stream-waste { stroke: #9E9E9E; stroke-dasharray: 2 4; }
+    .stream-recycle { stroke: #6A1B9A; stroke-dasharray: 6 4; stroke-width: 3.5; }
+    .stream-waste { stroke: #757575; stroke-dasharray: 2 4; stroke-width: 3.5; }
     .stream-water { stroke: #0277BD; stroke-dasharray: 4 2; }
     .slabel { fill: #263238; stroke: #FFFFFF; stroke-width: 4; paint-order: stroke; }
   </style>
 
   <defs>
-    <marker id="arrow-gas" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#90A4AE"/></marker>
+    <marker id="arrow-gas" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#607D8B"/></marker>
     <marker id="arrow-process" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#37474F"/></marker>
     <marker id="arrow-liquid" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#1E88E5"/></marker>
     <marker id="arrow-thermal" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#EF6C00"/></marker>
     <marker id="arrow-recycle" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#6A1B9A"/></marker>
-    <marker id="arrow-waste" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#9E9E9E"/></marker>
+    <marker id="arrow-waste" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#757575"/></marker>
     <marker id="arrow-water" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0277BD"/></marker>
   </defs>
 
@@ -73,7 +73,7 @@
     </g>
     <g id="unit-stripper" class="unit" data-name="Stripper">
       <rect x="1220" y="220" width="160" height="500" rx="8" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
-      <path d="M 1240 300 H 1360 M 1240 340 H 1360 M 1240 380 H 1360 M 1240 420 H 1360 M 1240 460 H 1360 M 1240 500 H 1360" fill="none" stroke="#90A4AE" stroke-width="2"/>
+      <path d="M 1240 300 H 1360 M 1240 340 H 1360 M 1240 380 H 1360 M 1240 420 H 1360 M 1240 460 H 1360 M 1240 500 H 1360" fill="none" stroke="#607D8B" stroke-width="2"/>
       <path d="M 1380 660 H 1280 V 700 H 1380" fill="none" stroke="#EF6C00" stroke-width="3"/>
       <text x="1300" y="260" font-size="18" font-weight="700" text-anchor="middle" fill="#263238">Stripper</text>
     </g>
@@ -98,33 +98,33 @@
     <g id="outlet-condensate" class="boundary"><circle cx="1560" cy="700" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
   </g>
 
-  <g id="layer-labels" font-size="14" font-weight="700">
-    <text id="label-stream-1" class="slabel" x="80" y="412" font-size="14">1: A feed</text>
-    <text id="label-stream-2" class="slabel" x="80" y="472" font-size="14">2: D feed</text>
-    <text id="label-stream-3" class="slabel" x="80" y="532" font-size="14">3: E feed</text>
-    <text id="label-stream-4" class="slabel" x="80" y="732" font-size="14">4: C feed</text>
-    <text id="label-stream-5" class="slabel" x="700" y="112" font-size="14">5: Stripper overhead</text>
-    <text id="label-stream-6" class="slabel" x="316" y="452" font-size="14">6: Reactor feed</text>
-    <text id="label-stream-7" class="slabel" x="540" y="332" font-size="14">7: Reactor effluent</text>
-    <text id="label-stream-8" class="slabel" x="600" y="172" font-size="14">8: Recycle</text>
-    <text id="label-stream-9" class="slabel" x="1000" y="242" font-size="14">9: Purge</text>
-    <text id="label-stream-10" class="slabel" x="1080" y="532" font-size="14">10: Liquid</text>
-    <text id="label-stream-11" class="slabel" x="1400" y="772" font-size="14">11: Product</text>
-    <text id="label-stream-12" class="slabel" x="520" y="692" text-anchor="middle" font-size="14">12: Cooling water</text>
-    <text id="label-stream-13" class="slabel" x="760" y="692" text-anchor="middle" font-size="14">13: Cooling water</text>
-    <text id="label-stream-steam" class="slabel" x="1470" y="652" text-anchor="middle" font-size="14">Steam</text>
-    <text id="label-stream-condensate" class="slabel" x="1470" y="692" text-anchor="middle" font-size="14">Condensate</text>
+  <g id="layer-labels" font-size="16" font-weight="700">
+    <text id="label-stream-1" class="slabel" x="80" y="412" font-size="16">1: A feed</text>
+    <text id="label-stream-2" class="slabel" x="80" y="472" font-size="16">2: D feed</text>
+    <text id="label-stream-3" class="slabel" x="80" y="532" font-size="16">3: E feed</text>
+    <text id="label-stream-4" class="slabel" x="80" y="732" font-size="16">4: C feed</text>
+    <text id="label-stream-5" class="slabel" x="700" y="112" font-size="16">5: Stripper overhead</text>
+    <text id="label-stream-6" class="slabel" x="316" y="452" font-size="16">6: Reactor feed</text>
+    <text id="label-stream-7" class="slabel" x="540" y="332" font-size="16">7: Reactor effluent</text>
+    <text id="label-stream-8" class="slabel" x="600" y="172" font-size="16">8: Recycle</text>
+    <text id="label-stream-9" class="slabel" x="1000" y="242" font-size="16">9: Purge</text>
+    <text id="label-stream-10" class="slabel" x="1080" y="532" font-size="16">10: Liquid</text>
+    <text id="label-stream-11" class="slabel" x="1400" y="772" font-size="16">11: Product</text>
+    <text id="label-stream-12" class="slabel" x="520" y="692" text-anchor="middle" font-size="16">12: Cooling water</text>
+    <text id="label-stream-13" class="slabel" x="760" y="692" text-anchor="middle" font-size="16">13: Cooling water</text>
+    <text id="label-stream-steam" class="slabel" x="1470" y="652" text-anchor="middle" font-size="16">Steam</text>
+    <text id="label-stream-condensate" class="slabel" x="1470" y="692" text-anchor="middle" font-size="16">Condensate</text>
   </g>
 
-  <g id="legend" font-size="14" fill="#263238">
+  <g id="legend" font-size="16" fill="#263238">
     <line x1="40" y1="810" x2="1560" y2="810" stroke="#CFD8DC" stroke-width="1"/>
-    <path class="legend-line stream-gas" d="M 40 850 H 90"/><text x="100" y="855" font-size="14">Gas</text>
-    <path class="legend-line stream-recycle" d="M 250 850 H 300"/><text x="310" y="855" font-size="14">Recycle gas</text>
-    <path class="legend-line stream-waste" d="M 460 850 H 510"/><text x="520" y="855" font-size="14">Purge</text>
-    <path class="legend-line stream-liquid" d="M 670 850 H 720"/><text x="730" y="855" font-size="14">Liquid</text>
-    <path class="legend-line stream-process" d="M 880 850 H 930"/><text x="940" y="855" font-size="14">Product</text>
-    <path class="legend-line stream-water" d="M 1090 850 H 1140"/><text x="1150" y="855" font-size="14">Cooling water</text>
-    <path class="legend-line stream-thermal" d="M 1300 850 H 1350"/><text x="1360" y="855" font-size="14">Heating steam</text>
+    <path class="legend-line stream-gas" d="M 40 850 H 90"/><text x="100" y="855" font-size="16">Gas</text>
+    <path class="legend-line stream-recycle" d="M 250 850 H 300"/><text x="310" y="855" font-size="16">Recycle gas</text>
+    <path class="legend-line stream-waste" d="M 460 850 H 510"/><text x="520" y="855" font-size="16">Purge</text>
+    <path class="legend-line stream-liquid" d="M 670 850 H 720"/><text x="730" y="855" font-size="16">Liquid</text>
+    <path class="legend-line stream-process" d="M 880 850 H 930"/><text x="940" y="855" font-size="16">Product</text>
+    <path class="legend-line stream-water" d="M 1090 850 H 1140"/><text x="1150" y="855" font-size="16">Cooling water</text>
+    <path class="legend-line stream-thermal" d="M 1300 850 H 1350"/><text x="1360" y="855" font-size="16">Heating steam</text>
   </g>
 
   <text id="title" x="40" y="64" font-size="32" font-weight="700" fill="#263238">Tennessee Eastman Process: 5 units, 52 readings, 20 faults</text>
