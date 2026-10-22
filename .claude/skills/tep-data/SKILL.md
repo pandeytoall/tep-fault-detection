@@ -49,3 +49,4 @@ Windows 11, i5-1135G7 (4 cores / 8 threads), 7.7 GB RAM, Intel Iris Xe (no CUDA)
   - `results/<phase>/`: metrics files plus `figures/`, overwritten on rerun (no `_v2` copies)
   - `research/`: researcher notes
 - Random seed 42 everywhere. Log runtime and peak RAM for every data and training script.
+- Charts: one message per chart, and the title states the finding. Readable at phone size, a single y-axis, colour-blind-safe colours, lines labelled directly where possible.

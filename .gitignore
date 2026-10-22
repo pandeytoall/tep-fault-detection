@@ -4,9 +4,17 @@ data/
 *.RData
 *.parquet
 
+# Private: career notes, LinkedIn material, post drafts. The GitHub repo is public
+private/
+# Third-party text kept only for local reading
+research/papers/
+*_raw.txt
+
 # Python caches
 __pycache__/
 .pytest_cache/
+*.pyc
+.ipynb_checkpoints/
 
 # Local Claude Code settings
 .claude/settings.local.json

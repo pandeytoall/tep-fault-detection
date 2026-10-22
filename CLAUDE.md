@@ -1,5 +1,14 @@
 # TEP fault detection: orchestrator setup
 
+## Who and why
+Rahul builds industrial AI for process plants (metals and alumina) in his day job. This side project learns the main fault-detection models hands-on, on the public Tennessee Eastman data only, and feeds a LinkedIn post series.
+- **Public data only.** Never use, ask for or guess employer or client data, company names, plant names, tag names or screenshots. This repo is public on GitHub.
+- **Private material lives in `private/` (git-ignored):** `NOTES.md` (goals, tracks A-D, open questions), `PLAN.md` (model list, build steps, post series, backlog), `linkedin/` (post analysis, scrapers, raw feeds) and `posts/` (drafts). Read them when planning scope or drafting posts; quote nothing from them into tracked files.
+- **Posts:** only what we build, how it works and the science behind it; no companies, vendors, industry news or opinion. Claude drafts; Rahul approves; publish only after a fresh "yes" for that post.
+
+## Talking to Rahul
+He's learning. Before each phase, explain in plain English what it is, why we need it and what to expect. After each phase: what we did, what we found, what's next. Write for engineers: short sentences, a one-line meaning for every term. Check a result against normal data before calling it good or bad, and say what is uncertain.
+
 The main session is the **orchestrator**. It plans, delegates, and reviews. It doesn't write pipeline code itself; a trivial fix found during review is fine if you say so.
 
 ## Guiding the user
