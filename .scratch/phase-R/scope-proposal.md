@@ -34,6 +34,7 @@ The second plan in `private/PLAN.md` conflicts with the decisions above. Settle 
 | G4 | Scorecard | FDR, FAR, train time, peak RAM; delay optional (D6) | Detection rate, FAR, detection delay to the first *sustained* alarm, one `results/scorecard.csv`. Define "sustained" (e.g. k consecutive samples) |
 | G5 | Missing steps | none | "Understand the plant" (map 52 variables to units, plot normal vs fault 1); a shared `evaluate.py` tested on a dummy model; a hard-faults study (3/9/15); an operator-style report |
 | G6 | Interface for a later assistant | not considered | Track B (an LLM assistant calling the models as tools) needs a callable interface per model in `src/` |
+| G8 | Where runs execute | Laptop only (7.7 GB) | Claude Code cloud session (4 vCPU, 16 GB, no GPU, nothing kept between sessions) for full-data runs; laptop for development on a subset. Only small results get committed |
 | G7 | Phases vs posts | 7 phases | 15 build steps, ~15 posts. Map phases to posts or not? |
 
 Also open in `private/NOTES.md`: hours per week, how the existing agent-harness repo fits in, and post logistics (crediting, video, frequency, repo name).
