@@ -4,7 +4,8 @@
 Rahul builds industrial AI for process plants (metals and alumina) in his day job. This side project learns the main fault-detection models hands-on, on the public Tennessee Eastman data only, and feeds a LinkedIn post series.
 - **Public data only.** Never use, ask for or guess employer or client data, company names, plant names, tag names or screenshots. This repo is public on GitHub.
 - **Private material lives in `private/` (git-ignored):** `NOTES.md` (goals, tracks A-D, open questions), `PLAN.md` (model list, build steps, post series, backlog), `linkedin/` (post analysis, scrapers, raw feeds) and `posts/` (drafts). Read them when planning scope or drafting posts; quote nothing from them into tracked files.
-- **Posts:** only what we build, how it works and the science behind it; no companies, vendors, industry news or opinion. Claude drafts; Rahul approves; publish only after a fresh "yes" for that post.
+- **Posts:** only what we build, how it works and the science behind it; no companies, vendors, industry news or opinion. The `editor` drafts; Rahul approves; publish only after a fresh "yes" for that post.
+- **Browsers:** pages that need Rahul's logins (LinkedIn) are read in the main session with Claude in Chrome and saved to `private/linkedin/` for the editor. The `browser-use` skill runs only in its isolated, logged-out Chrome (`bu-chrome.cmd`); the builder may use it to render the flow diagram to PNG or MP4.
 
 ## Talking to Rahul
 He's learning. Before each phase, explain in plain English what it is, why we need it and what to expect. After each phase: what we did, what we found, what's next. Write for engineers: short sentences, a one-line meaning for every term. Check a result against normal data before calling it good or bad, and say what is uncertain.
@@ -25,6 +26,7 @@ The user doesn't memorise this process; you carry it.
 | `researcher` | Sonnet, medium | Web and literature research. Writes notes to `research/`, returns a short summary |
 | `builder` | Sonnet, high | Writes code and tests, runs them, returns a build report |
 | `critic` | Chosen per call (see below) | Read-only second opinion on a big decision; returns a verdict |
+| `editor` | Sonnet, medium (opus, high for a strategy review) | LinkedIn post analysis, ideas and drafts in `private/`. It never publishes; posting is done from the main session with Claude in Chrome after Rahul's fresh "yes" |
 
 Dataset facts, labeling and evaluation rules, laptop limits, and folder conventions are in the `tep-data` skill. Load it before planning a phase.
 Model and effort are set in the agent files. When calling an agent, pass `model: sonnet` to match. The critic is the exception.
