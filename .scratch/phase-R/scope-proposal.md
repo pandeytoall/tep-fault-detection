@@ -25,16 +25,15 @@ No source gives per-fault PCA T²/SPE FDR at 1% FAR on the Rieth data. The only 
 Leakage guard for every phase: FDR above 50% on fault 3, 9 or 15 triggers an audit before it's reported.
 
 ## Grilling agenda (added 2026-10-22)
-The second plan in `private/PLAN.md` conflicts with the decisions above. Settle each one:
-| # | Question | Current scope | `private/PLAN.md` |
+Open scope questions, alongside D1-D8. Private questions (posts, logistics) are in `private/grilling-agenda.md`.
+| # | Question | Current scope | Alternative to weigh |
 |---|---|---|---|
-| G1 | Deep learning? | Out (D2) | Autoencoder, LSTM autoencoder, 1D-CNN/LSTM. A small dense autoencoder on subsampled runs takes minutes on CPU; LSTM/CNN are slower and need torch |
-| G2 | Phase order | ML (phase 2) before MSPC (phase 3) | PCA first, as the baseline (also post 2) |
-| G3 | Model list | HistGB, Isolation Forest, PCA, DPCA | + ICA, XGBoost or RF, the DL models above |
-| G4 | Scorecard | FDR, FAR, train time, peak RAM; delay optional (D6) | Detection rate, FAR, detection delay to the first *sustained* alarm, one `results/scorecard.csv`. Define "sustained" (e.g. k consecutive samples) |
-| G5 | Missing steps | none | "Understand the plant" (map 52 variables to units, plot normal vs fault 1); a shared `evaluate.py` tested on a dummy model; a hard-faults study (3/9/15); an operator-style report |
-| G6 | Interface for a later assistant | not considered | Track B (an LLM assistant calling the models as tools) needs a callable interface per model in `src/` |
-| G8 | Where runs execute | Laptop only (7.7 GB) | Claude Code cloud session (4 vCPU, 16 GB, no GPU, nothing kept between sessions) for full-data runs; laptop for development on a subset. Only small results get committed |
-| G7 | Phases vs posts | 7 phases | 15 build steps, ~15 posts. Map phases to posts or not? |
+| G1 | Deep learning? | Out (D2) | A small dense autoencoder on subsampled runs (minutes on CPU); LSTM autoencoder or 1D-CNN (slower, needs torch) |
+| G2 | Phase order | ML (phase 2) before MSPC (phase 3) | PCA first, as the baseline every model is compared against |
+| G3 | Model list | HistGB, Isolation Forest, PCA, DPCA | + ICA, XGBoost or RF, the DL models in G1 |
+| G4 | Scorecard | FDR, FAR, train time, peak RAM; delay optional (D6) | Detection delay to the first *sustained* alarm (define it, e.g. k consecutive samples); one `results/scorecard.csv` for all models |
+| G5 | Missing steps | none | Map the 52 variables to plant units and plot normal vs fault 1; a shared `evaluate.py` tested on a dummy model; a study of faults 3/9/15; an operator-style report |
+| G6 | Model interface | not considered | One callable function per model in `src/`, so a later tool-calling assistant can use them |
 
-Also open in `private/NOTES.md`: hours per week, how the existing agent-harness repo fits in, and post logistics (crediting, video, frequency, repo name).
+## G8 decided: where runs execute
+Brief and critic review (AGREE WITH CHANGES): `.scratch/phase-R/decision-cloud.md`. See the `Where runs execute` section in `CLAUDE.md`.

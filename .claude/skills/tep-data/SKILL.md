@@ -30,6 +30,7 @@ Samples before onset in faulty runs are normal operation.
 - Fit scalers/PCA on training data only (MSPC: normal training data only).
 - Compare models at equal false-alarm rate: set each model's alarm threshold on validation normal data so FAR is about 1% (MSPC: 99% control limits). The research phase may change this target; the user decides.
 - Report per fault: FDR (share of post-onset samples flagged). Overall: mean FDR with and without faults 3, 9, 15; FAR on `TEP_FaultFree_Testing`; train time; peak RAM.
+- Headline metrics for all models come from one machine (laptop or cloud); every results file records the machine. Subsets are a seed-42 choice of `simulationRun` IDs, saved with the results.
 - Faults 3, 9, 15 are near-undetectable in the literature. High FDR on them means suspect leakage, not a breakthrough.
 
 ## Laptop limits

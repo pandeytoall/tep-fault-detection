@@ -24,9 +24,21 @@ The user doesn't memorise this process; you carry it.
 | orchestrator (main session) | Opus, session setting | Plans each phase, writes the builder's spec, reviews with `/ml-review`, talks to the user |
 | `researcher` | Sonnet, medium | Web and literature research. Writes notes to `research/`, returns a short summary |
 | `builder` | Sonnet, high | Writes code and tests, runs them, returns a build report |
+| `critic` | Chosen per call (see below) | Read-only second opinion on a big decision; returns a verdict |
 
 Dataset facts, labeling and evaluation rules, laptop limits, and folder conventions are in the `tep-data` skill. Load it before planning a phase.
-Model and effort are set in the agent files. When calling an agent, pass `model: sonnet` to match.
+Model and effort are set in the agent files. When calling an agent, pass `model: sonnet` to match. The critic is the exception.
+
+## Second opinion (`critic`)
+Call it only before a decision that is expensive to undo: approving the scope at the end of phase R, writing an ADR, defining a metric or threshold rule, changing a data source, a second FAIL round on one phase, or a result that looks too good (e.g. high FDR on fault 3, 9 or 15). Routine specs and fixes skip it.
+- Brief: the decision, the options, your recommendation, and the evidence file paths. Leave out the conversation; it judges from the files.
+- Pick `model` and `effort` per call, and pass both:
+  | Decision | model | effort |
+  |---|---|---|
+  | One focused choice with clear evidence (a threshold, a window length) | `sonnet` | `medium` |
+  | Scope, architecture, or several linked decisions | `opus` | `high` |
+  | A suspected leak or a result that looks too good | `opus` | `xhigh` |
+- Tell the user the verdict in one or two lines. On DISAGREE, show them both positions; the user decides.
 
 ## Matt Pocock skills (plugin `mattpocock-skills`, user scope)
 This project uses these nine:
@@ -50,13 +62,20 @@ Run one phase at a time. Every phase except R ends with `/ml-review`.
 
 | Phase | Goal |
 |---|---|
-| R. Research | Researcher surveys TEP fault-detection benchmarks: which fast CPU methods work, achievable FDR at about 1% FAR, how papers handle faults 3/9/15. Orchestrator turns this into a proposed scope. **The user approves the scope.** |
-| 0. Setup | venv and packages, download the 4 files, convert to parquet, log peak RAM |
+| R. Research | Researcher surveys TEP fault-detection benchmarks: which fast CPU methods work, achievable FDR at about 1% FAR, how papers handle faults 3/9/15. Orchestrator turns this into a proposed scope; after grilling, `critic` (opus, high) checks it. **The user approves the scope.** |
+| 0. Setup | venv and pinned `requirements.txt`, download the 4 files, convert to parquet, **measure peak RAM of each conversion on the laptop** (decides how much runs in the cloud), cross-platform paths and hooks, one cloud smoke test |
 | 1. Labels and split | Labeling and run-level split, with tests |
 | 2. ML models | The approved models, thresholds calibrated to the agreed FAR |
 | 3. MSPC | PCA T² / SPE at 99% limits (plus any approved variant), same data and metrics |
 | 4. Diagnosis | Contribution plots per fault with real variable names |
 | 5. Report | One comparison report in `results/report/` |
+
+## Where runs execute
+Decision G8 (`.scratch/phase-R/decision-cloud.md`): the laptop by default, a Claude Code cloud session (16 GB RAM, no GPU, nothing persists) when the laptop can't do the job or parallel sessions save real time.
+- Laptop: grilling, specs, `/ml-review`, posts, and building each phase on a seed-42 subset of runs.
+- Cloud: full-data runs the laptop can't hold (decided by the phase 0 measurement), long sweeps, and independent phases built in parallel on separate branches. Give each cloud session its phase spec; it pushes code and `results/` only, never data.
+- Headline metrics for every model come from one machine; each results file records which.
+- Before any cloud run: phase 0 has delivered cross-platform paths and hooks, pinned `requirements.txt`, the download in the cloud setup script, and builder skills available in the cloud. The user has set up the environment (Custom network: `dataverse.harvard.edu`, `dvn-cloud-iqss.s3.amazonaws.com`).
 
 ## Phase loop (git)
 1. Write the phase spec to `.scratch/phase-<N>/spec.md` (conventions in `docs/agents/issue-tracker.md`) and give the builder its path.
