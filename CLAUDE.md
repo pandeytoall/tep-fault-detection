@@ -66,7 +66,7 @@ Run one phase at a time. Every phase except R ends with `/ml-review`.
 |---|---|
 | R. Research | Researcher surveys TEP fault-detection benchmarks: which fast CPU methods work, achievable FDR at about 1% FAR, how papers handle faults 3/9/15. Orchestrator turns this into a proposed scope; after grilling, `critic` (opus, high) checks it. **The user approves the scope.** |
 | 0. Setup | venv and pinned `requirements.txt`, download the 4 files, convert to parquet, **measure peak RAM of each conversion on the laptop** (decides how much runs in the cloud), normal vs fault 1 chart; cloud readiness (cross-platform paths, hooks, smoke test) only if a file is over the RAM limit |
-| 1. Labels and split | Labeling and run-level split; the 52 variables mapped to plant units, with a normal vs fault 1 plot; shared `evaluate.py` (FDR, FAR, detection delay, `results/scorecard.csv`) proven on a dummy model; all with tests |
+| 1. Labels and split | Labeling and run-level split; the 52 variables mapped to plant units; a check that fault numbers match IDV(1)-(20) (e.g. fault 6 drives the A feed reading to about zero); shared `evaluate.py` (FDR, FAR, detection delay, `results/scorecard.csv`) proven on a dummy model; all with tests |
 | 2. MSPC | PCA T² / SPE (the reference) and DPCA, at the agreed alarm limits plus the textbook 99% limit |
 | 3. ML models | Isolation Forest, autoencoder, gradient boosting (21-class), and the unseen-fault test. If behind, cut the autoencoder first, then the unseen-fault test |
 | 4. Diagnosis | Contribution plots per fault with real variable names; why faults 3, 9, 15 hide |
