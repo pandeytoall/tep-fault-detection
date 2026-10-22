@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="Arial, Helvetica, sans-serif">
+  <style>
+    .stream { fill: none; stroke-width: 3; }
+    .legend-line { fill: none; stroke-width: 3; }
+    .stream-gas { stroke: #90A4AE; stroke-dasharray: 10 4; }
+    .stream-process { stroke: #37474F; }
+    .stream-liquid { stroke: #1E88E5; }
+    .stream-thermal { stroke: #EF6C00; }
+    .stream-recycle { stroke: #6A1B9A; stroke-dasharray: 6 4; }
+    .stream-waste { stroke: #9E9E9E; stroke-dasharray: 2 4; }
+    .stream-water { stroke: #0277BD; stroke-dasharray: 4 2; }
+    .slabel { fill: #263238; stroke: #FFFFFF; stroke-width: 4; paint-order: stroke; }
+  </style>
+
+  <defs>
+    <marker id="arrow-gas" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#90A4AE"/></marker>
+    <marker id="arrow-process" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#37474F"/></marker>
+    <marker id="arrow-liquid" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#1E88E5"/></marker>
+    <marker id="arrow-thermal" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#EF6C00"/></marker>
+    <marker id="arrow-recycle" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#6A1B9A"/></marker>
+    <marker id="arrow-waste" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#9E9E9E"/></marker>
+    <marker id="arrow-water" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0277BD"/></marker>
+  </defs>
+
+  <rect id="background" x="0" y="0" width="1600" height="900" fill="#FFFFFF"/>
+
+  <g id="layer-streams">
+    <!-- Feeds A, D, E join the reactor feed header; C goes to the stripper -->
+    <path id="stream-1" class="stream stream-gas" data-from="inlet-feed-a" data-to="junction-feed-header" d="M 66 420 H 294" marker-end="url(#arrow-gas)"/>
+    <path id="stream-2" class="stream stream-gas" data-from="inlet-feed-d" data-to="junction-feed-header" d="M 66 480 H 294" marker-end="url(#arrow-gas)"/>
+    <path id="stream-3" class="stream stream-gas" data-from="inlet-feed-e" data-to="junction-feed-header" d="M 66 540 H 294" marker-end="url(#arrow-gas)"/>
+    <path id="stream-4" class="stream stream-gas" data-from="inlet-feed-c" data-to="unit-stripper" d="M 66 740 H 1180 V 620 H 1220" marker-end="url(#arrow-gas)"/>
+    <!-- Stripper overhead and recycle both return to the reactor feed header -->
+    <path id="stream-5" class="stream stream-gas" data-from="unit-stripper" data-to="junction-feed-header" d="M 1300 220 V 120 H 360 V 300 H 306" marker-end="url(#arrow-gas)"/>
+    <path id="stream-6" class="stream stream-gas" data-from="junction-feed-header" data-to="unit-reactor" d="M 306 460 H 440" marker-end="url(#arrow-gas)"/>
+    <path id="stream-7" class="stream stream-gas" data-from="unit-reactor" data-to="unit-condenser" d="M 520 380 V 340 H 720" marker-end="url(#arrow-gas)"/>
+    <path id="stream-condenser-outlet" class="stream stream-gas" data-from="unit-condenser" data-to="unit-separator" d="M 800 340 H 900" marker-end="url(#arrow-gas)"/>
+    <path id="stream-separator-vapor" class="stream stream-gas" data-from="unit-separator" data-to="unit-compressor" d="M 970 280 V 210" marker-end="url(#arrow-gas)"/>
+    <path id="stream-8" class="stream stream-recycle" data-from="unit-compressor" data-to="junction-feed-header" d="M 940 180 H 380 V 340 H 306" marker-end="url(#arrow-recycle)"/>
+    <path id="stream-9" class="stream stream-waste" data-from="unit-separator" data-to="outlet-purge" d="M 970 250 H 1164" marker-end="url(#arrow-waste)"/>
+    <circle id="tee-purge" cx="970" cy="250" r="4" fill="#37474F"/>
+    <path id="stream-10" class="stream stream-liquid" data-from="unit-separator" data-to="unit-stripper" d="M 970 520 V 540 H 1220" marker-end="url(#arrow-liquid)"/>
+    <path id="stream-11" class="stream stream-process" data-from="unit-stripper" data-to="outlet-product" d="M 1300 720 V 780 H 1554" marker-end="url(#arrow-process)"/>
+    <!-- Utilities: reactor and condenser cooling water, stripper steam -->
+    <path id="stream-12" class="stream stream-water" data-from="inlet-cw-reactor" data-to="unit-reactor" d="M 500 660 V 580" marker-end="url(#arrow-water)"/>
+    <path id="stream-12-return" class="stream stream-water" data-from="unit-reactor" data-to="outlet-cw-reactor" d="M 540 580 V 660" marker-end="url(#arrow-water)"/>
+    <path id="stream-13" class="stream stream-water" data-from="inlet-cw-condenser" data-to="unit-condenser" d="M 740 660 V 376" marker-end="url(#arrow-water)"/>
+    <path id="stream-13-return" class="stream stream-water" data-from="unit-condenser" data-to="outlet-cw-condenser" d="M 780 376 V 660" marker-end="url(#arrow-water)"/>
+    <path id="stream-steam" class="stream stream-thermal" data-from="inlet-steam" data-to="unit-stripper" d="M 1554 660 H 1380" marker-end="url(#arrow-thermal)"/>
+    <path id="stream-condensate" class="stream stream-thermal" data-from="unit-stripper" data-to="outlet-condensate" d="M 1380 700 H 1554" marker-end="url(#arrow-thermal)"/>
+  </g>
+
+  <g id="layer-units">
+    <g id="unit-reactor" class="unit" data-name="Reactor">
+      <rect x="440" y="380" width="160" height="200" rx="8" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
+      <path d="M 500 580 V 500 H 540 V 580" fill="none" stroke="#0277BD" stroke-width="3"/>
+      <text x="520" y="436" font-size="18" font-weight="700" text-anchor="middle" fill="#263238">Reactor</text>
+    </g>
+    <g id="unit-condenser" class="unit" data-name="Condenser">
+      <circle cx="760" cy="340" r="40" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
+      <path d="M 730 340 L 740 320 L 750 360 L 760 320 L 770 360 L 780 320 L 790 340" fill="none" stroke="#263238" stroke-width="2"/>
+      <text x="760" y="288" font-size="18" font-weight="700" text-anchor="middle" fill="#263238">Condenser</text>
+    </g>
+    <g id="unit-separator" class="unit" data-name="Vapor-liquid separator">
+      <rect x="900" y="280" width="140" height="240" rx="8" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
+      <path d="M 900 450 H 1040" fill="none" stroke="#1E88E5" stroke-width="2"/>
+      <text x="970" y="384" font-size="18" font-weight="700" text-anchor="middle" fill="#263238"><tspan x="970" dy="0">Vapor-liquid</tspan><tspan x="970" dy="24">separator</tspan></text>
+    </g>
+    <g id="unit-compressor" class="unit" data-name="Recycle compressor">
+      <circle cx="970" cy="180" r="30" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
+      <polygon points="950,180 986,162 986,198" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
+      <text x="1016" y="186" font-size="18" font-weight="700" text-anchor="start" fill="#263238">Recycle compressor</text>
+    </g>
+    <g id="unit-stripper" class="unit" data-name="Stripper">
+      <rect x="1220" y="220" width="160" height="500" rx="8" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
+      <path d="M 1240 300 H 1360 M 1240 340 H 1360 M 1240 380 H 1360 M 1240 420 H 1360 M 1240 460 H 1360 M 1240 500 H 1360" fill="none" stroke="#90A4AE" stroke-width="2"/>
+      <path d="M 1380 660 H 1280 V 700 H 1380" fill="none" stroke="#EF6C00" stroke-width="3"/>
+      <text x="1300" y="260" font-size="18" font-weight="700" text-anchor="middle" fill="#263238">Stripper</text>
+    </g>
+
+    <!-- Reactor feed header: streams 1, 2, 3, 5 and 8 join here, stream 6 leaves -->
+    <g id="junction-feed-header" class="junction" data-name="Reactor feed header">
+      <rect x="294" y="280" width="12" height="280" fill="#37474F"/>
+    </g>
+
+    <!-- Battery limits -->
+    <g id="inlet-feed-a" class="boundary"><circle cx="60" cy="420" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="inlet-feed-d" class="boundary"><circle cx="60" cy="480" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="inlet-feed-e" class="boundary"><circle cx="60" cy="540" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="inlet-feed-c" class="boundary"><circle cx="60" cy="740" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="outlet-purge" class="boundary"><circle cx="1170" cy="250" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="outlet-product" class="boundary"><circle cx="1560" cy="780" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="inlet-cw-reactor" class="boundary"><circle cx="500" cy="666" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="outlet-cw-reactor" class="boundary"><circle cx="540" cy="666" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="inlet-cw-condenser" class="boundary"><circle cx="740" cy="666" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="outlet-cw-condenser" class="boundary"><circle cx="780" cy="666" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="inlet-steam" class="boundary"><circle cx="1560" cy="660" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+    <g id="outlet-condensate" class="boundary"><circle cx="1560" cy="700" r="6" fill="#FFFFFF" stroke="#263238" stroke-width="2"/></g>
+  </g>
+
+  <g id="layer-labels" font-size="14" font-weight="700">
+    <text id="label-stream-1" class="slabel" x="80" y="412" font-size="14">1: A feed</text>
+    <text id="label-stream-2" class="slabel" x="80" y="472" font-size="14">2: D feed</text>
+    <text id="label-stream-3" class="slabel" x="80" y="532" font-size="14">3: E feed</text>
+    <text id="label-stream-4" class="slabel" x="80" y="732" font-size="14">4: C feed</text>
+    <text id="label-stream-5" class="slabel" x="700" y="112" font-size="14">5: Stripper overhead</text>
+    <text id="label-stream-6" class="slabel" x="316" y="452" font-size="14">6: Reactor feed</text>
+    <text id="label-stream-7" class="slabel" x="540" y="332" font-size="14">7: Reactor effluent</text>
+    <text id="label-stream-8" class="slabel" x="600" y="172" font-size="14">8: Recycle</text>
+    <text id="label-stream-9" class="slabel" x="1000" y="242" font-size="14">9: Purge</text>
+    <text id="label-stream-10" class="slabel" x="1080" y="532" font-size="14">10: Liquid</text>
+    <text id="label-stream-11" class="slabel" x="1400" y="772" font-size="14">11: Product</text>
+    <text id="label-stream-12" class="slabel" x="520" y="692" text-anchor="middle" font-size="14">12: Cooling water</text>
+    <text id="label-stream-13" class="slabel" x="760" y="692" text-anchor="middle" font-size="14">13: Cooling water</text>
+    <text id="label-stream-steam" class="slabel" x="1470" y="652" text-anchor="middle" font-size="14">Steam</text>
+    <text id="label-stream-condensate" class="slabel" x="1470" y="692" text-anchor="middle" font-size="14">Condensate</text>
+  </g>
+
+  <g id="legend" font-size="14" fill="#263238">
+    <line x1="40" y1="810" x2="1560" y2="810" stroke="#CFD8DC" stroke-width="1"/>
+    <path class="legend-line stream-gas" d="M 40 850 H 90"/><text x="100" y="855" font-size="14">Gas</text>
+    <path class="legend-line stream-recycle" d="M 250 850 H 300"/><text x="310" y="855" font-size="14">Recycle gas</text>
+    <path class="legend-line stream-waste" d="M 460 850 H 510"/><text x="520" y="855" font-size="14">Purge</text>
+    <path class="legend-line stream-liquid" d="M 670 850 H 720"/><text x="730" y="855" font-size="14">Liquid</text>
+    <path class="legend-line stream-process" d="M 880 850 H 930"/><text x="940" y="855" font-size="14">Product</text>
+    <path class="legend-line stream-water" d="M 1090 850 H 1140"/><text x="1150" y="855" font-size="14">Cooling water</text>
+    <path class="legend-line stream-thermal" d="M 1300 850 H 1350"/><text x="1360" y="855" font-size="14">Heating steam</text>
+  </g>
+
+  <text id="title" x="40" y="64" font-size="32" font-weight="700" fill="#263238">Tennessee Eastman Process: 5 units, 52 readings, 20 faults</text>
+</svg>
