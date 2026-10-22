@@ -55,3 +55,4 @@ The rules (run budget, alarm limits, tracks, lags, delay, unseen-fault test) are
 
 ## Comments
 - 2026-10-22, orchestrator, user agreed: phase 0 adds the normal vs fault 1 chart (post 1's image). Cloud readiness (cross-platform paths, hooks, cloud smoke test) only happens if the phase 0 RAM log shows a file over the limit.
+- 2026-10-22, user agreed: Track B moves forward. A new phase 2b "Assistant v1" (MCP server over a replayed historian, alarm log and plant documents, with PCA as its only model tool) comes right after phase 2. Later model phases add their model as a tool. The full scorecard arrives about 1-2 weeks later.

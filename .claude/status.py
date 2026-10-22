@@ -12,6 +12,7 @@ PHASES = [
     ("0", "setup & data"),
     ("1", "labels & split"),
     ("2", "MSPC"),
+    ("2b", "assistant v1"),
     ("3", "ML models"),
     ("4", "diagnosis"),
     ("5", "report"),
