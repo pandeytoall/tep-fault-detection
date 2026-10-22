@@ -54,3 +54,4 @@ The rules (run budget, alarm limits, tracks, lags, delay, unseen-fault test) are
 - The plan changes when results or limits demand it: propose, record here under Comments, then continue.
 
 ## Comments
+- 2026-10-22, orchestrator, user agreed: phase 0 adds the normal vs fault 1 chart (post 1's image). Cloud readiness (cross-platform paths, hooks, cloud smoke test) only happens if the phase 0 RAM log shows a file over the limit.
