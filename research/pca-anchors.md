@@ -100,7 +100,7 @@ Consequences for the reviewer:
 - Rato & Reis accepted manuscript: https://baes.uc.pt/bitstream/10316/27393/1/Fault%20detection%20in%20the%20Tennessee%20Eastman%20benchmark%20process.pdf (host would not resolve for the fetch tool; handle https://estudogeral.uc.pt/handle/10316/27393 redirected in a loop). Likely has per-fault PCA/DPCA T² and Q at a 1% limit on the original data. Best target for a human to open.
 - Braatz-group PDFs on web.mit.edu (Jiang et al. 2015 CVA + FDA, DOI 10.1016/j.compchemeng.2015.03.001; Jiang JProCon 2017; Lu 2018) returned compressed bytes, so unread. They may repeat the Russell 2000 PCA/DPCA/CVA comparison.
 - PHM Society deep autoencoder paper (https://papers.phmsociety.org/index.php/phmconf/article/download/3578/phmc_23_3578) reportedly compares T² and SPE over 21 faults in its Table 2; PDF unreadable.
-- The PDFs fetched were saved under C:\Users\pande\.claude\projects\D--ML-model-training\...\tool-results\ if someone with a PDF text extractor wants them. No PDF reader (pdftoppm, pypdf) is installed in this environment.
+- The PDFs fetched were kept only in the local tool cache (not in the repo); re-download them from the URLs above if needed. No PDF reader (pdftoppm, pypdf) is installed in this environment.
 
 ## Track B lead: HistorianRCA
 Source: https://github.com/ScottDuncanAI/HistorianRCA (read once; author site https://scottduncanai.com/). Release date is not on the page: it shows Version 1.0 and a 2026 copyright, and the user's date (about 2026-10-21) is UNVERIFIED. An open issue asks about integrating with IBM AssetOpsBench.
