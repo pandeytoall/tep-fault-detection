@@ -222,3 +222,6 @@ Source: Bathelt, Ricker & Jelali (2015), "Revision of the Tennessee Eastman Proc
 - These routings settle streams 5, 7, 12 and 13, which were UNVERIFIED above.
 - xmeas_22 (D&V name: "separator cooling water outlet temperature"): in Fig. 3 the only cooling-water outlet temperature downstream of the reactor sits on the **condenser** return (stream 13). Treat xmeas_22 as belonging to the condenser. Keep D&V's name; note it as an inference from the figure.
 - The figure is IFAC copyright: we draw our own diagram, without copying it or its instrument tags.
+
+## Fault numbering check in the data (2026-10-22)
+Faulty_Training, fault 6, run 1: mean xmeas_1 (A feed) is 0.26 before onset (samples 1-20) and 0.000 after sample 40; the normal training run 1 mean is 0.251. That matches IDV(6) "A feed loss", which supports faultNumber 1-20 = IDV(1)-IDV(20). Check: `src.data.load_run`, in the phase 0 review.
