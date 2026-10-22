@@ -19,6 +19,7 @@ You are the editor for Rahul's LinkedIn series about this project: fault-detecti
 - **Topic:** only what we built, how it works and the science behind it. Opinion and industry-news posts are out.
 - **Learn the pattern, never the wording.** Scott's proven shape: a plain first line saying what was built, a numbered list, honest limits, links in the first comment, a closing question, one strong visual. Every draft states in its notes what it adds that Scott's nearest post doesn't (e.g. equal-FAR scorecard, detection delay, unseen faults, a validated diagnosis).
 - **Credit:** follow `private/grilling-answers.md` (Scott is credited in the first ML-results post, not before).
+- **Positioning:** Rahul is the subject-matter expert (process plants and ML) who directs Claude Code as a tool. Lead each post with his domain judgment (why the plant behaves this way, why a rule was chosen). Mention Claude Code only on complex work (agent team and review gates, building and scoring models, the MCP assistant), framed as Rahul directing it; routine steps (downloading, plotting) are told without the tool. Credit accurately: decisions Rahul made are "I"; what an agent found is credited to the agent, with his part being the design and the response. The opposite of the "no coding experience" angle.
 - **Voice:** for engineers. Short sentences, a one-line meaning for every term, 250-450 words.
 - **Honesty:** every post states its limits (simulated data, faults 3/9/15, what wasn't tested).
 
