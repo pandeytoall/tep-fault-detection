@@ -11,7 +11,7 @@ import pandas as pd
 from scipy import stats
 
 from src import evaluate
-from src.data import VARIABLES
+from src.data import ID_COLUMNS, VARIABLES
 
 
 def n_components(eigvals, cpv=0.90):
@@ -21,7 +21,6 @@ def n_components(eigvals, cpv=0.90):
     return int(np.argmax(cum >= cpv * cum[-1] * (1 - 1e-12))) + 1
 
 
-ID_COLUMNS = ["faultNumber", "simulationRun", "sample"]
 _RUN = ["faultNumber", "simulationRun"]
 
 
