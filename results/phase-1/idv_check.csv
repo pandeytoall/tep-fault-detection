@@ -1,5 +1,5 @@
-fault,expected_tag,expected_name,share_runs_in_top3,most_common_top1
-4,xmv_10,Reactor cooling water flow,1.0,xmv_10
-5,xmv_11,Condenser cooling water flow,0.75,xmv_9
-6,xmeas_1,A feed,0.0,xmv_9
-7,xmeas_4,A and C feed,0.0,xmv_9
+fault,expected_tag,expected_name,share_runs_in_top3,most_common_top1,top3_most_common,plant_unit_of_top1,verdict
+4,xmv_10,Reactor cooling water flow,1.0,xmv_10,xmeas_21:20;xmeas_9:20;xmv_10:20,reactor,confirmed
+5,xmv_11,Condenser cooling water flow,0.0,xmeas_11,xmeas_11:20;xmeas_4:16;xmeas_22:14,separator,unit_match_post_hoc
+6,xmeas_1,A feed,1.0,xmv_3,xmeas_1:20;xmeas_20:20;xmv_3:20,feed,confirmed
+7,xmeas_4,A and C feed,0.0,xmeas_16,xmeas_7:20;xmeas_13:19;xmeas_16:19,stripper,fail
