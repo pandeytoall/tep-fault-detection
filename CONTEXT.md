@@ -8,6 +8,17 @@ Comparing fault-detection models on the public Tennessee Eastman Process (TEP) s
 One simulation of the plant from start to end (500 samples in training files, 960 in testing files, one sample every 3 minutes). Train/test splits are made by run, never by sample.
 _Avoid_: episode, trajectory
 
+**Paired runs**:
+Runs with the same number in one file family (training or testing). They share one noise stream, so they're identical up to **onset**; afterwards they differ only by the fault's effect. Training and testing families share no noise.
+_Avoid_: matched runs, twin runs
+
+**Run group**:
+One of four fixed, disjoint sets of run numbers in the training family. Each group has one job, the same for every fault: **fit** (330, models learn normal behaviour), **limit** (100, set **alarm limits**; 50 of them, **limit_tune**, also tune the supervised model), **supervised** (50, supervised training), **dev** (20, **development runs**). A run number is never used in two groups.
+
+**Development runs**:
+The **dev** run group: faulty and normal training runs used for tuning and sanity checks. They never set alarm limits or headline results.
+_Avoid_: validation set (ambiguous with **limit**)
+
 **Alarm limit**:
 The score above which a model raises an alarm on a sample. Set on held-back normal training runs so the model hits a target **FAR**; never on test data.
 _Avoid_: cut-off, threshold (in posts)
