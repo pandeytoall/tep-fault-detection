@@ -58,3 +58,14 @@ _Avoid_: latency, time to detect
 
 **Lag window (L)**:
 How many past samples a model sees besides the current one. One L is shared by DPCA and the other lagged models, chosen from normal runs only; PCA uses none.
+
+**T²**:
+A PCA alarm score: how far a sample sits from normal along the patterns normal operation uses. It catches unusual size of normal-looking movement.
+_Avoid_: Hotelling (in posts)
+
+**SPE**:
+A PCA alarm score: how much of a sample falls outside the patterns normal operation uses (squared prediction error). It catches broken relationships between readings.
+_Avoid_: Q statistic (in posts)
+
+**Textbook limit**:
+An alarm limit computed from a statistical formula (F-distribution for T², Jackson-Mudholkar for SPE) instead of from held-back normal runs. Reported for MSPC only; it assumes Gaussian data and can miss its FAR target.
