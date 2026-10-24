@@ -17,7 +17,7 @@ import pyarrow.parquet as pq
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src import data  # noqa: E402
+from src import data, prepare  # noqa: E402
 
 LIMIT_GB = 6.0
 LOG = ROOT / "results" / "phase-0" / "conversion_log.csv"
@@ -26,22 +26,22 @@ COLUMNS = ["file", "rows", "runtime_s", "peak_ram_gb", "machine", "status"]
 
 def main():
     names = sys.argv[1:] or list(data.FILES)  # dict order = smallest first
-    if data.is_up_to_date(names):
+    if prepare.is_up_to_date(names):
         print("up to date")
         return
-    md5s = data.fetch_md5s()
-    machine = data.machine_label(data.cpu_name(), psutil.virtual_memory().total)
+    md5s = prepare.fetch_md5s()
+    machine = prepare.machine_label(prepare.cpu_name(), psutil.virtual_memory().total)
     rows = []
     for name in names:
         rdata, parquet = data.RAW / f"{name}.RData", data.PROCESSED / f"{name}.parquet"
-        print(f"{name}: download {data.download(name, rdata, md5s[name])}", flush=True)
+        print(f"{name}: download {prepare.download(name, rdata, md5s[name])}", flush=True)
         parquet.unlink(missing_ok=True)
         t0 = time.perf_counter()
-        status, peak = data.run_guarded(data.convert, (rdata, parquet), LIMIT_GB)
+        status, peak = prepare.run_guarded(prepare.convert, (rdata, parquet), LIMIT_GB)
         runtime = time.perf_counter() - t0
         n = pq.read_metadata(parquet).num_rows if status == "ok" else ""
         rows.append({"file": name, "rows": n, "runtime_s": round(runtime, 1), "peak_ram_gb": round(peak, 2),
-                     "machine": machine, "status": data.row_status(status, name, n)})
+                     "machine": machine, "status": prepare.row_status(status, name, n)})
         print(rows[-1], flush=True)
         LOG.parent.mkdir(parents=True, exist_ok=True)
         with open(LOG, "w", newline="") as f:  # rewritten after every file so a crash keeps earlier rows

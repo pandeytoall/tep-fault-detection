@@ -1,0 +1,5 @@
+fault,expected_tag,expected_name,share_runs_in_top3,most_common_top1
+4,xmv_10,Reactor cooling water flow,1.0,xmv_10
+5,xmv_11,Condenser cooling water flow,0.75,xmv_9
+6,xmeas_1,A feed,0.0,xmv_9
+7,xmeas_4,A and C feed,0.0,xmv_9

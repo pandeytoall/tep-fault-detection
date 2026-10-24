@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src import data  # noqa: E402
+from src import data, signatures, style  # noqa: E402
+from src.variables import VARIABLE_INFO  # noqa: E402
 
 OUT = ROOT / "results" / "phase-0" / "figures" / "normal-vs-fault1.png"
-NORMAL, FAULT = "#0072B2", "#D55E00"  # Okabe-Ito blue and vermillion
 
 
 def main():
@@ -26,16 +26,16 @@ def main():
     faulty = data.load_run("TEP_Faulty_Training", 1, 1)
     assert len(normal) == len(faulty) == n_samples
 
-    shifts = data.rank_shifts(faulty, data.VARIABLES, onset)
+    shifts = signatures.rank_shifts(faulty, data.VARIABLES, onset)
     print(f"Top 3 standardised mean shifts, fault 1 run 1 (after sample {onset} vs samples 1-{onset}):")
     for var, s in shifts.head(3).items():
-        name, unit = data.VARIABLE_INFO[var]
+        name, unit = VARIABLE_INFO[var].name, VARIABLE_INFO[var].unit
         print(f"  {var}: {name} ({unit})  shift = {s:.1f} pre-onset standard deviations")
 
     var = shifts.index[0]
-    name, unit = data.VARIABLE_INFO[var]
+    name, unit = VARIABLE_INFO[var].name, VARIABLE_INFO[var].unit
     pre = faulty.loc[faulty["sample"] <= onset, var].mean()
-    peak_sample, peak = data.peak_after_onset(faulty, var, onset)
+    peak_sample, peak = signatures.peak_after_onset(faulty, var, onset)
     hours = round((peak_sample - onset) * data.HOURS_PER_SAMPLE * 2) / 2  # nearest half hour
     verb = "drives" if peak > pre else "pulls"
     title = (f"Fault 1 {verb} the {name.lower()}\n"
@@ -44,7 +44,7 @@ def main():
 
     plt.rcParams.update({"font.size": 15})
     fig, ax = plt.subplots(figsize=(8, 5.5), dpi=150)
-    for df, colour in ((normal, NORMAL), (faulty, FAULT)):
+    for df, colour in ((normal, style.NORMAL), (faulty, style.FAULT)):
         ax.plot(df["sample"] * data.HOURS_PER_SAMPLE, df[var], color=colour, lw=1.6)
     ax.axvline(onset_h, color="0.35", ls="--", lw=1.4)
     top = max(normal[var].max(), faulty[var].max())
@@ -54,11 +54,11 @@ def main():
     ax.annotate(f"Fault starts (hour {onset_h:g})", (onset_h, 0.0), xycoords=("data", "axes fraction"),
                 xytext=(6, 6), textcoords="offset points", va="bottom", color="0.25")
     ax.annotate("Fault 1 run", (peak_sample * data.HOURS_PER_SAMPLE, peak), xytext=(40, 6),
-                textcoords="offset points", ha="left", color=FAULT, fontweight="bold")
+                textcoords="offset points", ha="left", color=style.FAULT, fontweight="bold")
     x_n = 13.0
     y_n = normal.loc[(normal["sample"] * data.HOURS_PER_SAMPLE - x_n).abs().idxmin(), var]
     ax.annotate("Normal run", (x_n, y_n), xytext=(0, -10), textcoords="offset points", ha="center", va="top",
-                color=NORMAL, fontweight="bold")
+                color=style.NORMAL, fontweight="bold")
     last = n_samples * data.HOURS_PER_SAMPLE
     ax.set_xlabel("Hours since start of run")
     ax.set_ylabel(f"{name} ({unit})")

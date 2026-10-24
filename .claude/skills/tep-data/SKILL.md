@@ -29,10 +29,12 @@ Samples before onset in faulty runs are normal operation.
 - Validation splits are by `simulationRun`, never by random rows (samples within a run are autocorrelated).
 - Fit scalers/PCA on training data only (MSPC: normal training data only).
 - Run budget (fixed seed-42 run IDs, saved with the results):
-  - FaultFree_Training: 400 runs fit the models; 100 are held back for alarm limits (50 of them also tune the supervised model).
-  - Faulty_Training: 50 runs per fault train the supervised model; 20 other runs per fault are the development and tuning runs.
-  - Testing files: all runs, once, for the final scorecard.
-- Alarm limits: set on the 100 held-back normal runs at two FAR targets, 1% (headline, used for ranking) and 5% (secondary). MSPC also reports the textbook 99% limit.
+  - Run k of the fault-free file and of every fault share one noise stream within a family (training or testing). See `.scratch/phase-1/run-pairing.md`. So one seed-42 partition of IDs 1-500 applies to every training file and fault, in `results/phase-1/run_split.json`: `fit` 330, `limit` 100 (`limit_tune` 50 inside it), `supervised` 50, `dev` 20.
+  - No model uses one run ID (any file, any fault) in two jobs. A paired difference (faulty run k minus normal run k) is never a model input, in either family.
+  - `fit`: unsupervised fit. The lag choice and autoencoder validation also use `fit` runs, split by run.
+  - `limit`: alarm limits only. `supervised`: supervised training (faulty runs plus the normal runs with these IDs). Supervised tuning uses faulty `dev` runs plus normal `dev` and `limit_tune` runs. The unseen-fault model reuses the full model's hyperparameters (no separate tuning).
+  - Testing files: all runs, once, for the final scorecard. No testing run matches any training run (checked over all 500 x 500 pairs).
+- Alarm limits: set on the 100 `limit` normal runs at two FAR targets, 1% (headline, used for ranking) and 5% (secondary). MSPC also reports the textbook 99% limit.
 - Two tracks, separate tables, never ranked together: unsupervised (PCA, DPCA, Isolation Forest, autoencoder; normal runs only) and supervised (HistGradientBoosting, 21 classes, alarm score = 1 - P(normal), built-in early stopping off).
 - Lag window L: one value for DPCA and all lagged models, chosen on normal training runs only with the Ku et al. (1995) rule from L = 0-5. Lags look back within one run; drop each run's first L samples from all counts. PCA uses no lags.
 - Unseen-fault test: retrain the supervised model without faults 1, 8, 13, 14, 16; compare with the full supervised model and PCA on those faults.
