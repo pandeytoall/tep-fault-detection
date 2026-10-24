@@ -1,0 +1,7 @@
+rule,lag,n_vars,a,r,r_new,chosen_L,note
+cpv,0,52,31,21,21,2,user decision 2026-10-25: 90% rule; parallel analysis disagreed
+cpv,1,104,50,54,12,2,user decision 2026-10-25: 90% rule; parallel analysis disagreed
+cpv,2,156,68,88,1,2,user decision 2026-10-25: 90% rule; parallel analysis disagreed
+cpv,3,208,87,121,-1,2,user decision 2026-10-25: 90% rule; parallel analysis disagreed
+parallel,0,52,13,39,39,2,user decision 2026-10-25: 90% rule; parallel analysis disagreed
+parallel,1,104,35,69,-9,2,user decision 2026-10-25: 90% rule; parallel analysis disagreed
