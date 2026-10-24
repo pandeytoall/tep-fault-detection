@@ -77,7 +77,7 @@ def main():
               + ", ".join(f"f{f} {v:.3f}" for f, v in fdrs.items())
               + f", mean FDR {get('mean_fdr'):.3f}, excl 3/9/15 {get('mean_fdr_excl_3_9_15'):.3f}"
               + f", sustained rate {get('sustained_rate'):.2f}")
-    print(f"runtime {time.perf_counter() - t0:.1f} s, peak RAM {prepare.peak_ram_gb():.2f} GB")
+    print(prepare.runtime_line(t0))
 
 
 if __name__ == "__main__":

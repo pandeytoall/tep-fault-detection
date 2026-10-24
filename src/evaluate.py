@@ -12,9 +12,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.data import ROOT
+from src.data import HOURS_PER_SAMPLE, ROOT
 
-MINUTES_PER_SAMPLE = 3
+MINUTES_PER_SAMPLE = round(HOURS_PER_SAMPLE * 60)
 IN_A_ROW = 3
 HARD_FAULTS = (3, 9, 15)
 DEFAULT_SCORECARD = ROOT / "results" / "scorecard.csv"

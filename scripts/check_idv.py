@@ -33,7 +33,7 @@ def main():
     print(out.to_string(index=False))
     for row in out.itertuples():
         print(f"fault {row.fault}: {row.verdict} (share {row.share_runs_in_top3:.2f}, top-1 {row.most_common_top1})")
-    print(f"runtime {time.perf_counter() - t0:.1f} s, peak RAM {prepare.peak_ram_gb():.2f} GB")
+    print(prepare.runtime_line(t0))
 
 
 if __name__ == "__main__":

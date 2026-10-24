@@ -233,3 +233,17 @@ def test_peak_ram_gb_covers_a_large_allocation():
     x = np.ones(30_000_000)  # 240 MB, touched
     x[::1000] = 2.0
     assert prepare.peak_ram_gb() > 0.2
+
+
+def test_runtime_line_reports_seconds_and_peak_ram():
+    import re
+    import time
+    line = prepare.runtime_line(time.perf_counter() - 2.0)
+    m = re.fullmatch(r"runtime (\d+\.\d) s, peak RAM (\d+\.\d\d) GB", line)
+    assert m and 2.0 <= float(m.group(1)) < 3.0 and float(m.group(2)) > 0
+
+
+def test_minutes_per_sample_matches_the_sampling_interval():
+    from src import evaluate
+    assert evaluate.MINUTES_PER_SAMPLE == 3 and isinstance(evaluate.MINUTES_PER_SAMPLE, int)
+    assert evaluate.MINUTES_PER_SAMPLE == round(data.HOURS_PER_SAMPLE * 60)

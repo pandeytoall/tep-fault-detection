@@ -107,8 +107,12 @@ def over_limit(peak_bytes, limit_gb):
     return peak_bytes > limit_gb * GB
 
 
-def _tree_usage():
-    """(current RSS, peak working set) in bytes summed over this process and all descendants."""
+def _tree_usage(own_peak=True):
+    """(current RSS, peak working set) in bytes summed over this process and all descendants.
+
+    The peak uses the OS peak working set where there is one (current RSS elsewhere). With own_peak=False
+    this process counts at its current RSS only, so a poller's earlier peak does not inflate a child's reading.
+    """
     me = psutil.Process()
     cur = peak = 0
     for p in [me] + me.children(recursive=True):
@@ -117,21 +121,18 @@ def _tree_usage():
         except psutil.Error:
             continue
         cur += mi.rss
-        peak += getattr(mi, "peak_wset", mi.rss) if p is not me else mi.rss
+        peak += getattr(mi, "peak_wset", mi.rss) if own_peak or p is not me else mi.rss
     return cur, peak
 
 
 def peak_ram_gb():
     """Peak working set of this process plus its children, in GB (current RSS where the OS has no peak)."""
-    me = psutil.Process()
-    total = 0
-    for p in [me] + me.children(recursive=True):
-        try:
-            mi = p.memory_info()
-        except psutil.Error:
-            continue
-        total += getattr(mi, "peak_wset", mi.rss)
-    return total / GB
+    return _tree_usage()[1] / GB
+
+
+def runtime_line(t0):
+    """The runtime and peak-RAM line every script prints at the end; t0 is a time.perf_counter() start."""
+    return f"runtime {time.perf_counter() - t0:.1f} s, peak RAM {peak_ram_gb():.2f} GB"
 
 
 def _kill_tree(proc):
@@ -156,7 +157,7 @@ def run_guarded(target, args, limit_gb, poll_s=0.02):
     peak = 0
     status = None
     while proc.is_alive():
-        cur, pk = _tree_usage()
+        cur, pk = _tree_usage(own_peak=False)
         peak = max(peak, cur, pk)
         if over_limit(cur, limit_gb):
             status = "over_limit"
