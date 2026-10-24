@@ -4,7 +4,8 @@ Steps: choose L with Ku et al. (1995) on the `fit` normal runs (90% rule decides
 stop after lag_choice.csv if the rules disagree, L = 0 or nothing stops by l = 5; fit PCA (no lags) and DPCA (L lags)
 on `fit`; set 1%, 5% and textbook 99% limits (limits from the `limit` runs); score the `dev` runs (20 faults, plus the
 normal runs with the same IDs). Run scripts/mspc_final.py afterwards.
-Writes results/phase-2/{lag_choice.csv, dev_scores.csv, pca.npz, dpca.npz, figures/pc-sweep-dev.png}.
+Writes results/phase-2/{lag_choice.csv, dev_scores.csv, pca.npz, dpca.npz (with the 1%, 5% and textbook limits),
+figures/pc-sweep-dev.png}.
 Usage: .venv/Scripts/python scripts/mspc_dev.py
 """
 import sys
@@ -14,7 +15,6 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import pandas as pd
 import psutil
 
@@ -63,8 +63,7 @@ def plot_sweep(sweep, chosen, path):
     assert (spe > t2).all(), "title claims SPE beats T2 at every PC count"
     title = (f"PCA SPE beats T² at every PC count from 5 to 30\n"
              f"(dev mean FDR at 1% FAR; the 90% rule picks {chosen} PCs)")
-    plt.rcParams.update({"font.size": 15})
-    fig, ax = plt.subplots(figsize=(8, 5.5), dpi=150)
+    fig, ax = style.new_figure()
     for stat, series in (("spe", spe), ("t2", t2)):
         ax.plot(series.index, series.values, color=colours[stat], lw=2.2)
         ax.text(series.index[-1] + 0.4, series.values[-1], names[stat], color=colours[stat], va="center",
@@ -74,13 +73,7 @@ def plot_sweep(sweep, chosen, path):
     ax.set_xlim(5, 36)
     ax.set_xlabel("Retained principal components")
     ax.set_ylabel("Mean FDR over 20 faults (dev runs)")
-    ax.set_title(title, fontsize=15, loc="left")
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    fig.savefig(path)
-    plt.close(fig)
+    style.finish_figure(fig, ax, title, path, title_size=15)
 
 
 def main():
@@ -117,20 +110,21 @@ def main():
         t_fit = time.perf_counter()
         monitors[kind] = mspc.PCAMonitor(lags=lags, cpv=0.90).fit(fit_runs)
         train_time[kind] = time.perf_counter() - t_fit
-        monitors[kind].save(OUT / f"{kind}.npz")
         print(f"{kind}: {monitors[kind].n_pc} PCs of {len(monitors[kind].eigvals)}, lags {lags}, "
               f"{monitors[kind].n_rows} fit rows, fit {train_time[kind]:.2f} s")
     del fit_runs
 
-    # --- limits and dev scoring -------------------------------------------------------
+    # --- limits (stored with the models) and dev scoring ---------------------------------
     limit_runs = data.load_runs(NORMAL, ids("limit"))
+    all_limits = {kind: alarm_limits(monitor, limit_runs, skip) for kind, monitor in monitors.items()}
+    for kind, monitor in monitors.items():
+        monitor.save(OUT / f"{kind}.npz", limits=all_limits[kind])
     dev_faulty = data.load_runs(FAULTY, ids("dev"))
     dev_normal = data.load_runs(NORMAL, ids("dev"))
     assert sorted(dev_faulty["faultNumber"].unique()) == list(range(1, 21))
     rows = []
     for kind, monitor in monitors.items():
-        limits = alarm_limits(monitor, limit_runs, skip)
-        rows += mspc.scorecard_rows(kind, monitor.score(dev_faulty), monitor.score(dev_normal), limits, onset, skip,
+        rows += mspc.scorecard_rows(kind, monitor.score(dev_faulty), monitor.score(dev_normal), all_limits[kind], onset, skip,
                                     machine=machine, split_file=SPLIT_FILE, train_time_s=train_time[kind],
                                     peak_ram_gb=prepare.peak_ram_gb())
     (OUT / "dev_scores.csv").unlink(missing_ok=True)

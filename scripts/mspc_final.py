@@ -13,7 +13,6 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import pandas as pd
 import psutil
 
@@ -26,7 +25,6 @@ OUT = ROOT / "results" / "phase-2"
 SPLIT_FILE = "results/phase-1/run_split.json"
 KINDS = ("pca", "dpca")
 MODELS = [f"{k}-{s}" for k in KINDS for s in mspc.STATS]
-HARD = evaluate.HARD_FAULTS
 
 # Rato & Reis (2013), Table 2: FDR at a 1% FAR on the original Braatz data (research/pca-anchors.md, Anchor C).
 # Columns: PCA T2, PCA Q, DPCA T2, DPCA Q. Their DPCA uses 3 lags and 29 PCs, their PCA 17 PCs (parallel analysis).
@@ -43,11 +41,13 @@ LITERATURE_COLUMNS = ["pca-t2", "pca-spe", "dpca-t2", "dpca-spe"]  # order of th
 
 
 def saved_limits():
-    """({kind: {stat: {limit name: value}}}, {kind: train time s}, dev peak RAM GB) from dev_scores.csv."""
+    """({kind: {stat: {limit name: value}}}, {kind: train time s}, dev peak RAM GB).
+
+    Limits come from the models' .npz files (written by mspc_dev.py); train time and RAM from dev_scores.csv.
+    """
     dev = pd.read_csv(OUT / "dev_scores.csv")
-    per_limit = dev[dev.metric == "far"]
-    limits = {k: {s: dict(per_limit[per_limit.model == f"{k}-{s}"].set_index("limit_name")["limit_value"])
-                  for s in mspc.STATS} for k in KINDS}
+    limits = {k: mspc.PCAMonitor.load(OUT / f"{k}.npz").limits for k in KINDS}
+    assert all(v is not None for v in limits.values()), "no limits in the .npz; rerun scripts/mspc_dev.py"
     train = {k: float(dev[(dev.model == f"{k}-t2") & (dev.metric == "train_time_s")]["value"].iloc[0]) for k in KINDS}
     return limits, train, float(dev[dev.metric == "peak_ram_gb"]["value"].max())
 
@@ -55,12 +55,10 @@ def saved_limits():
 def plot_fdr_by_fault(fdr1, path):
     """Dot plot, one row per fault, PCA T2 and PCA SPE at the 1% limit."""
     t2, spe = fdr1["pca-t2"], fdr1["pca-spe"]
-    assert t2[4] < 0.5 < 0.9 < spe[4] and max(t2[f] for f in HARD) <= 0.10 and max(spe[f] for f in HARD) <= 0.10
     title = (f"PCA SPE catches fault 4 ({spe[4]:.2f}) where T² does not ({t2[4]:.2f});\n"
              f"faults 3, 9 and 15 stay unseen by both (1% FAR, test runs)")
     colours = {"pca-spe": style.OKABE_ITO["vermillion"], "pca-t2": style.OKABE_ITO["blue"]}
-    plt.rcParams.update({"font.size": 14})
-    fig, ax = plt.subplots(figsize=(8, 9), dpi=150)
+    fig, ax = style.new_figure(figsize=(8, 9), font_size=14)
     faults = list(fdr1.index)
     for i, f in enumerate(faults):
         ax.plot([t2[f], spe[f]], [i, i], color="0.75", lw=2, zorder=1)
@@ -73,13 +71,7 @@ def plot_fdr_by_fault(fdr1, path):
     ax.set_xlabel("Fault detection rate (share of post-onset samples flagged)")
     ax.text(1.03, 0, "SPE", color=colours["pca-spe"], fontweight="bold", va="center")
     ax.text(1.03, 1, "T²", color=colours["pca-t2"], fontweight="bold", va="center")
-    ax.set_title(title, fontsize=14, loc="left")
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    fig.savefig(path)
-    plt.close(fig)
+    style.finish_figure(fig, ax, title, path, title_size=14)
 
 
 def main():
@@ -127,7 +119,6 @@ def main():
     lit.round(4).to_csv(OUT / "vs_literature.csv")
 
     # --- checks and print ------------------------------------------------------------------
-    failures = []
     print("\nTest table at the 1% limit")
     summary = one[one.metric.isin(["far", "sustained_rate", "mean_fdr", "mean_fdr_excl_3_9_15"])]
     print(summary.pivot(index="metric", columns="model", values="value")[MODELS].round(4).to_string())
@@ -139,15 +130,6 @@ def main():
         sel = df[df.limit_name == limit_name]
         far = sel[sel.metric == "far"].set_index("model")["value"]
         print(f"test FAR at {limit_name}: " + ", ".join(f"{m} {far[m]:.4f}" for m in MODELS))
-        fd = sel[sel.metric == "fdr"].pivot(index="fault", columns="model", values="value")
-        for m in MODELS:
-            worst = fd.loc[list(HARD), m].max()
-            bound = 0.10 if limit_name == "1%" else far[m] + 0.05
-            if worst > bound:
-                failures.append(f"LEAK? {m} at {limit_name}: max FDR on 3/9/15 = {worst:.3f} > {bound:.3f}")
-            window = {"1%": (0.005, 0.02), "5%": (0.025, 0.10)}.get(limit_name)
-            if window and not window[0] <= far[m] <= window[1]:
-                failures.append(f"FAR out of range: {m} at {limit_name} = {far[m]:.4f}, expected {window}")
     big = lit[[c for c in lit.columns if c.startswith("diff-")]]
     print("\nFaults where ours differs from Rato & Reis by more than 0.1 (1% limit):")
     for c in LITERATURE_COLUMNS:
@@ -156,9 +138,11 @@ def main():
                                      for f in d.index[d.abs() > 0.1]) or "none"))
     print(f"train time s: {train_time}; peak RAM GB: dev {dev_peak:.2f}, final scoring {scoring_peak:.2f}")
 
-    plot_fdr_by_fault(fdr1, OUT / "figures" / "fdr-by-fault.png")
+    failures = mspc.final_check_failures(df, MODELS)
     for f in failures:
         print("CHECK FAILED:", f)
+    if not failures:  # the chart title states the findings the checks confirm
+        plot_fdr_by_fault(fdr1, OUT / "figures" / "fdr-by-fault.png")
     print(prepare.runtime_line(t0))
     if failures:
         sys.exit(3)

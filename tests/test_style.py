@@ -14,3 +14,19 @@ def test_palette_has_the_eight_okabe_ito_colours():
     assert len(set(style.OKABE_ITO.values())) == 8
     assert all(re.fullmatch(r"#[0-9A-F]{6}", c) for c in style.OKABE_ITO.values())
     assert style.OKABE_ITO["blue"] == style.NORMAL and style.OKABE_ITO["vermillion"] == style.FAULT
+
+
+def test_finish_figure_titles_left_hides_top_right_spines_and_saves_a_png(tmp_path):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, ax = style.new_figure(figsize=(4, 3), font_size=12)
+    ax.plot([0, 1], [0, 1])
+    path = tmp_path / "sub" / "chart.png"
+    style.finish_figure(fig, ax, "A finding as the title", path)
+    assert path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    assert ax.get_title(loc="left") == "A finding as the title"
+    assert not ax.spines["top"].get_visible() and not ax.spines["right"].get_visible()
+    assert ax.spines["left"].get_visible() and ax.spines["bottom"].get_visible()
+    assert not plt.fignum_exists(fig.number)  # closed after saving

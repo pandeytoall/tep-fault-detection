@@ -2,6 +2,8 @@
 
 Samples are 1-based; frames carry faultNumber, simulationRun, sample and the variable columns.
 """
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -237,7 +239,7 @@ def test_parallel_analysis_keeps_only_the_components_above_noise():
     z = np.c_[f1, f1, f1, f2, f2, f2] + 0.5 * rng.normal(size=(n, 6))  # two clear factors, eigenvalues ~ 2.5, 2.5, 0.2...
     z = (z - z.mean(0)) / z.std(0, ddof=1)
     eigvals = np.sort(np.linalg.eigvalsh(z.T @ z / (n - 1)))[::-1]
-    assert mspc.parallel_n_components(eigvals, n_rows=n, n_vars=6) == 2
+    assert mspc.parallel_n_components(eigvals, n_rows=n) == 2
 
 
 def test_ku_lag_parallel_rule_runs_and_labels_the_table():
@@ -279,3 +281,94 @@ def test_scorecard_rows_cover_four_models_at_three_limits():
     far_spe = df[(df.model == "pca-spe") & (df.limit_name == "1%") & (df.metric == "far")]["value"].iloc[0]
     assert t2_1 == 1.0 and far_spe == 0.0
     assert df[df.model == "pca-spe"].query("limit_name == '5%'")["limit_value"].iloc[0] == 0.9
+
+
+# --- phase 2b cleanup: limits stored with the model ------------------------------------
+LIMITS = {"t2": {"1%": 5.5, "5%": 4.25, "99% textbook": 6.0}, "spe": {"1%": 1.5, "5%": 0.75, "99% textbook": 2.0}}
+
+
+def _small_monitor():
+    rng = np.random.default_rng(5)
+    train = _frame(rng.normal(size=(60, 3)), runs=3)
+    return mspc.PCAMonitor(lags=0, cpv=0.8, variables=VARS3).fit(train)
+
+
+def test_limits_saved_with_the_model_come_back_exactly(tmp_path):
+    monitor = _small_monitor()
+    monitor.save(tmp_path / "m.npz", limits=LIMITS)
+    assert mspc.PCAMonitor.load(tmp_path / "m.npz").limits == LIMITS
+
+
+def test_a_model_saved_without_limits_loads_with_none(tmp_path):
+    monitor = _small_monitor()
+    monitor.save(tmp_path / "m.npz")
+    assert mspc.PCAMonitor.load(tmp_path / "m.npz").limits is None
+
+
+def test_stored_limits_equal_the_phase_2_dev_scores():
+    """The .npz limits (written by mspc_dev.py) are the ones in dev_scores.csv; phase 2b reads only the .npz."""
+    root = Path(__file__).resolve().parent.parent / "results" / "phase-2"
+    dev = pd.read_csv(root / "dev_scores.csv")
+    dev = dev[dev.metric == "far"]
+    for kind in ("pca", "dpca"):
+        stored = mspc.PCAMonitor.load(root / f"{kind}.npz").limits
+        assert stored is not None, f"{kind}.npz has no limits; rerun scripts/mspc_dev.py"
+        for stat in mspc.STATS:
+            table = dev[dev.model == f"{kind}-{stat}"].set_index("limit_name")["limit_value"]
+            assert set(stored[stat]) == set(table.index) == {"1%", "5%", mspc.TEXTBOOK}
+            for name, value in table.items():
+                assert stored[stat][name] == pytest.approx(value, rel=1e-12)
+
+
+# --- phase 2b cleanup: final-run plausibility, FAR and leak checks ----------------------
+MODELS4 = ["pca-t2", "pca-spe", "dpca-t2", "dpca-spe"]
+GOOD_FDR = {"pca-t2": {4: 0.3, 3: 0.02, 9: 0.02, 15: 0.03}, "pca-spe": {4: 0.98, 3: 0.01, 9: 0.01, 15: 0.02},
+            "dpca-t2": {4: 0.2, 3: 0.03, 9: 0.03, 15: 0.05}, "dpca-spe": {4: 0.99, 3: 0.01, 9: 0.01, 15: 0.01}}
+
+
+def _final_rows(fdr=None, far_by_limit=None):
+    fdr = fdr or GOOD_FDR
+    far_by_limit = far_by_limit or {"1%": 0.01, "5%": 0.05, "99% textbook": 0.02}
+    rows = []
+    for limit_name, far in far_by_limit.items():
+        for m in MODELS4:
+            rows.append({"model": m, "limit_name": limit_name, "metric": "far", "fault": np.nan, "value": far})
+            for fault, v in fdr[m].items():
+                rows.append({"model": m, "limit_name": limit_name, "metric": "fdr", "fault": fault, "value": v})
+    return pd.DataFrame(rows)
+
+
+def test_final_checks_pass_on_a_plausible_scorecard():
+    assert mspc.final_check_failures(_final_rows(), MODELS4) == []
+
+
+def test_final_checks_flag_a_far_outside_its_window():
+    out = mspc.final_check_failures(_final_rows(far_by_limit={"1%": 0.04, "5%": 0.05, "99% textbook": 0.02}), MODELS4)
+    assert len(out) == 4 and all("FAR out of range" in f and "at 1%" in f for f in out)
+
+
+def test_final_checks_flag_a_leak_on_the_hard_faults():
+    fdr = {**GOOD_FDR, "dpca-t2": {**GOOD_FDR["dpca-t2"], 9: 0.30}}
+    out = mspc.final_check_failures(_final_rows(fdr), MODELS4)
+    assert len(out) >= 1 and all("LEAK?" in f and "dpca-t2" in f for f in out)
+
+
+def test_the_leak_bound_at_other_limits_is_far_plus_five_points():
+    fdr = {**GOOD_FDR, "pca-t2": {**GOOD_FDR["pca-t2"], 15: 0.11}}
+    rows = _final_rows(fdr, far_by_limit={"1%": 0.01, "5%": 0.05, "99% textbook": 0.07})
+    out = mspc.final_check_failures(rows, MODELS4)
+    # 0.11 > 0.10 at the 1% limit, but 0.11 <= 0.07 + 0.05 at the textbook limit
+    assert [f for f in out if "LEAK?" in f] and not [f for f in out if "textbook" in f and "LEAK?" in f]
+
+
+@pytest.mark.parametrize("m, value", [("pca-t2", 0.6), ("pca-spe", 0.85)])
+def test_final_checks_flag_an_implausible_fault_4(m, value):
+    fdr = {**GOOD_FDR, m: {**GOOD_FDR[m], 4: value}}
+    out = mspc.final_check_failures(_final_rows(fdr), MODELS4)
+    assert any("fault 4" in f and m in f for f in out)
+
+
+# --- phase 2b cleanup: parallel analysis takes only what varies ------------------------------
+def test_parallel_analysis_needs_only_the_eigenvalues_and_row_count():
+    import inspect
+    assert list(inspect.signature(mspc.parallel_n_components).parameters) == ["eigvals", "n_rows"]

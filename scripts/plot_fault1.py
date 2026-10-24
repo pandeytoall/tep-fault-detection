@@ -9,7 +9,6 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -42,8 +41,7 @@ def main():
              f"from {pre:.0f} {unit} to about {peak:.0f} {unit} within {hours:g} hours of the fault")
     onset_h = onset * data.HOURS_PER_SAMPLE
 
-    plt.rcParams.update({"font.size": 15})
-    fig, ax = plt.subplots(figsize=(8, 5.5), dpi=150)
+    fig, ax = style.new_figure()
     for df, colour in ((normal, style.NORMAL), (faulty, style.FAULT)):
         ax.plot(df["sample"] * data.HOURS_PER_SAMPLE, df[var], color=colour, lw=1.6)
     ax.axvline(onset_h, color="0.35", ls="--", lw=1.4)
@@ -63,12 +61,7 @@ def main():
     ax.set_xlabel("Hours since start of run")
     ax.set_ylabel(f"{name} ({unit})")
     ax.set_xlim(0, last)
-    ax.set_title(title, loc="left", fontsize=14, fontweight="bold")
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-    fig.tight_layout()
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT)
+    style.finish_figure(fig, ax, title, OUT, title_size=14, fontweight="bold")
     print(f"saved {OUT}\ntitle: {title}")
 
 

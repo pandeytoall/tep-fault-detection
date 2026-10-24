@@ -4,6 +4,7 @@ Rules: .scratch/phase-2/spec.md. Frames hold faultNumber, simulationRun, sample 
 Lagged rows are built inside one run only; a run's first L samples have no full history and are dropped.
 """
 import copy
+import json
 from pathlib import Path
 
 import numpy as np
@@ -62,12 +63,17 @@ class PCAMonitor:
     Scaler: mean and std (ddof=1) per variable of the normal fit runs. The PCs come from the second-moment
     matrix of the scaled, lagged fit matrix (columns [x(k) ... x(k-L)], rows inside one run only), so no
     run-crossing rows and no re-centring. The PC count is the fewest reaching `cpv` of the total variance.
+
+    Note: that matrix is the uncentred second moment, Z'Z / (n - 1). The scaled columns of the lagged fit matrix
+    have mean near but not exactly 0 (lagging drops each run's first rows), so it differs from the covariance by
+    a negligible mean term. T2 and SPE use these eigenpairs, and so do the contributions in src/contributions.py.
     """
 
     def __init__(self, lags=0, cpv=0.90, variables=None):
         self.lags = int(lags)
         self.cpv = float(cpv)
         self.variables = list(VARIABLES if variables is None else variables)
+        self.limits = None  # {stat: {limit name: value}}, set by load() when the .npz holds them
 
     # --- fitting ---------------------------------------------------------------
     def _scaled(self, frame):
@@ -131,11 +137,13 @@ class PCAMonitor:
         return {"t2": float(t2), "spe": float(spe)}
 
     # --- persistence -----------------------------------------------------------
-    def save(self, path):
+    def save(self, path, limits=None):
+        """Write the model to an .npz. `limits` ({stat: {limit name: value}}: 1%, 5%, textbook) is stored with it."""
         Path(path).parent.mkdir(parents=True, exist_ok=True)
+        extra = {} if limits is None else {"limits_json": np.array(json.dumps(limits))}
         np.savez(path, mean=self.mean, std=self.std, loadings=self.loadings, eigvals=self.eigvals,
                  lags=self.lags, n_pc=self.n_pc, n_rows=self.n_rows, cpv=self.cpv,
-                 variables=np.array(self.variables))
+                 variables=np.array(self.variables), **extra)
 
     @classmethod
     def load(cls, path):
@@ -144,20 +152,27 @@ class PCAMonitor:
             monitor.mean, monitor.std = f["mean"], f["std"]
             monitor.loadings, monitor.eigvals = f["loadings"], f["eigvals"]
             monitor.n_pc, monitor.n_rows = int(f["n_pc"]), int(f["n_rows"])
+            monitor.limits = json.loads(str(f["limits_json"])) if "limits_json" in f.files else None
         return monitor
 
 
 # --- Ku et al. (1995) lag choice ----------------------------------------------------
-def parallel_n_components(eigvals, n_rows, n_vars, reps=5, seed=42):
+PARALLEL_REPS = 5
+PARALLEL_SEED = 42
+
+
+def parallel_n_components(eigvals, n_rows):
     """Horn's parallel analysis: leading eigenvalues of the correlation matrix that beat the mean eigenvalues
-    of `reps` matrices of independent normal noise with the same shape. Counting stops at the first failure."""
-    rng = np.random.default_rng(seed)
+    of PARALLEL_REPS matrices of independent normal noise with `n_rows` rows and one column per eigenvalue.
+    Counting stops at the first failure."""
+    n_vars = len(eigvals)
+    rng = np.random.default_rng(PARALLEL_SEED)
     noise = np.zeros(n_vars)
-    for _ in range(reps):
+    for _ in range(PARALLEL_REPS):
         z = rng.standard_normal((n_rows, n_vars))
         z = (z - z.mean(axis=0)) / z.std(axis=0, ddof=1)
         noise += np.sort(np.linalg.eigvalsh(z.T @ z / (n_rows - 1)))[::-1]
-    beats = np.asarray(eigvals) > noise / reps
+    beats = np.asarray(eigvals) > noise / PARALLEL_REPS
     return int(np.argmin(beats)) if not beats.all() else int(len(beats))
 
 
@@ -178,7 +193,7 @@ def ku_lag(frame, max_lag=5, rule="cpv", cpv=0.90, variables=None):
         if rule == "cpv":
             a = monitor.n_pc
         elif rule == "parallel":
-            a = parallel_n_components(monitor.eigvals, monitor.n_rows, n_vars)
+            a = parallel_n_components(monitor.eigvals, monitor.n_rows)
         else:
             raise ValueError(f"unknown rule {rule!r}")
         r = n_vars - a
@@ -224,3 +239,37 @@ def scorecard_rows(kind, faulty, normal, limits, onset, skip, after=None, **meta
             rows += evaluate.model_rows(f"{kind}-{stat}", "unsupervised", limit_name, limit, f, n, onset, skip,
                                         after, **meta)
     return rows
+
+
+# --- checks on the final (testing-file) scorecard --------------------------------------
+FAR_WINDOWS = {"1%": (0.005, 0.02), "5%": (0.025, 0.10)}  # plausible test FAR at the two empirical limits
+LEAK_BOUND_1PCT = 0.10  # max FDR on faults 3/9/15 at the 1% limit; at other limits the bound is FAR + 0.05
+
+
+def final_check_failures(df, models):
+    """Stop conditions for the final run: a list of messages, empty when every check passes.
+
+    `df` is the long-format scorecard (model, limit_name, metric, fault, value). Checks, per model and limit:
+    - FAR inside FAR_WINDOWS (1% and 5% limits);
+    - leak: max FDR on faults 3, 9, 15 within LEAK_BOUND_1PCT at the 1% limit, FAR + 0.05 at the others;
+    - plausibility at the 1% limit: PCA T2 misses fault 4 (FDR < 0.5) and PCA SPE catches it (FDR > 0.9).
+    """
+    failures = []
+    for limit_name in df["limit_name"].unique():
+        sel = df[df["limit_name"] == limit_name]
+        far = sel[sel["metric"] == "far"].set_index("model")["value"]
+        fdr = sel[sel["metric"] == "fdr"].pivot(index="fault", columns="model", values="value")
+        for m in models:
+            worst = fdr.loc[list(evaluate.HARD_FAULTS), m].max()
+            bound = LEAK_BOUND_1PCT if limit_name == "1%" else far[m] + 0.05
+            if worst > bound:
+                failures.append(f"LEAK? {m} at {limit_name}: max FDR on 3/9/15 = {worst:.3f} > {bound:.3f}")
+            window = FAR_WINDOWS.get(limit_name)
+            if window and not window[0] <= far[m] <= window[1]:
+                failures.append(f"FAR out of range: {m} at {limit_name} = {far[m]:.4f}, expected {window}")
+        if limit_name == "1%":
+            if fdr.loc[4, "pca-t2"] >= 0.5:
+                failures.append(f"implausible: pca-t2 fault 4 FDR = {fdr.loc[4, 'pca-t2']:.3f}, expected < 0.5")
+            if fdr.loc[4, "pca-spe"] <= 0.9:
+                failures.append(f"implausible: pca-spe fault 4 FDR = {fdr.loc[4, 'pca-spe']:.3f}, expected > 0.9")
+    return failures
