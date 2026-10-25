@@ -67,3 +67,16 @@ VARIABLE_INFO = {
     tag: Variable(tag, name, unit, plant_unit, kind)
     for tag, (name, unit, plant_unit), kind in zip(VARIABLES, _XMEAS + _ANALYZERS + _XMV, _KINDS)
 }
+
+
+# --- scoring units for the assistant (phase 2b): the 8 plant units folded into 5 ---------------------------------
+SCORING_UNITS = ["feeds", "reactor", "condenser/separator", "compressor/recycle", "stripper"]
+PLANT_TO_SCORING_UNIT = {
+    "feed": "feeds", "reactor": "reactor", "condenser": "condenser/separator", "separator": "condenser/separator",
+    "compressor": "compressor/recycle", "purge": "compressor/recycle", "stripper": "stripper", "product": "stripper",
+}
+
+
+def scoring_unit(tag):
+    """One of SCORING_UNITS for a tag (xmeas_N / xmv_N)."""
+    return PLANT_TO_SCORING_UNIT[VARIABLE_INFO[tag].plant_unit]

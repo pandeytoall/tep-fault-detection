@@ -36,3 +36,22 @@ def test_spot_checks_against_the_flowsheet():
 
 def test_every_unit_has_at_least_one_variable():
     assert {v.plant_unit for v in variables.VARIABLE_INFO.values()} == ALLOWED_UNITS
+
+
+def test_eight_plant_units_fold_into_five_scoring_units():
+    assert variables.SCORING_UNITS == ["feeds", "reactor", "condenser/separator", "compressor/recycle", "stripper"]
+    assert variables.PLANT_TO_SCORING_UNIT == {
+        "feed": "feeds", "reactor": "reactor", "condenser": "condenser/separator",
+        "separator": "condenser/separator", "compressor": "compressor/recycle", "purge": "compressor/recycle",
+        "stripper": "stripper", "product": "stripper"}
+    assert set(variables.PLANT_TO_SCORING_UNIT) == ALLOWED_UNITS
+
+
+def test_scoring_unit_of_a_tag_follows_its_plant_unit():
+    assert variables.scoring_unit("xmeas_1") == "feeds" and variables.scoring_unit("xmv_3") == "feeds"
+    assert variables.scoring_unit("xmeas_21") == "reactor"
+    assert variables.scoring_unit("xmeas_22") == "condenser/separator"  # condenser
+    assert variables.scoring_unit("xmeas_12") == "condenser/separator"  # separator level
+    assert variables.scoring_unit("xmeas_10") == "compressor/recycle"   # purge rate
+    assert variables.scoring_unit("xmeas_17") == "stripper"             # product (stripper underflow)
+    assert {variables.scoring_unit(t) for t in data.VARIABLES} == set(variables.SCORING_UNITS)

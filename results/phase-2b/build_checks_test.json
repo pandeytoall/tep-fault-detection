@@ -1,0 +1,42 @@
+{
+ "machine": "laptop, Intel i5-1135G7, 7.7 GB RAM",
+ "set": "test",
+ "normal_share_above": {
+  "t2": 0.009994769268304364,
+  "spe": 0.01156005313698833,
+  "n_cases": 10
+ },
+ "fault6": {
+  "case_23": {
+   "top5": [
+    "xmv_11",
+    "xmeas_17",
+    "xmeas_1",
+    "xmeas_9",
+    "xmv_10"
+   ],
+   "a_feed_in_top5": true
+  },
+  "case_49": {
+   "top5": [
+    "xmv_11",
+    "xmeas_17",
+    "xmeas_1",
+    "xmeas_9",
+    "xmv_10"
+   ],
+   "a_feed_in_top5": true
+  },
+  "case_62": {
+   "top5": [
+    "xmv_11",
+    "xmeas_17",
+    "xmeas_1",
+    "xmeas_9",
+    "xmv_10"
+   ],
+   "a_feed_in_top5": true
+  }
+ },
+ "onset_in_range": true
+}
