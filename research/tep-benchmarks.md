@@ -1,6 +1,6 @@
 # TEP fault-detection benchmarks — research notes (Phase R)
 
-Author: research pass for rahulpandey.pgcmma01@iimtrichy.ac.in, 2026-09-25.
+Author: research pass for Rahul Pandey, 2026-09-25.
 Scope: answer the 7 questions in `.scratch/phase-R/spec.md` to support scoping the ML phase (Phase 2)
 and the MSPC phase (Phase 3). Primary sources only; every number has a URL. Items I could not
 confirm from a primary source are marked **UNVERIFIED**.
