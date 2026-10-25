@@ -126,3 +126,28 @@ def test_the_saved_sandbox_probe_shows_no_file_shell_or_web_access():
     assert probe["verdict"]["no_file_shell_or_web_access"] is True
     assert sorted(probe["verdict"]["tools_available_to_the_model"]) == sorted(session.ALLOWED_TOOLS)
     assert probe["verdict"]["tool_calls_made"] == [] and probe["machine"]
+
+
+# --- the prompt hash survives line-ending changes ------------------------------------------------------
+def test_prompt_hash_ignores_crlf_and_matches_a_hand_computed_sha256(tmp_path):
+    import hashlib
+    lf, crlf = tmp_path / "lf.md", tmp_path / "crlf.md"
+    lf.write_bytes(b"line one\nline two\n")
+    crlf.write_bytes(b"line one\r\nline two\r\n")
+    expected = hashlib.sha256(b"line one\nline two\n").hexdigest()
+    assert session.prompt_sha256(lf) == session.prompt_sha256(crlf) == expected
+
+
+def test_the_frozen_prompt_hash_matches_the_prompt_file_in_any_line_ending(tmp_path):
+    prompt = ROOT / "src" / "assistant" / "prompt.md"
+    frozen = (ROOT / "results" / "phase-2b" / "prompt_frozen.sha256").read_text().strip()
+    assert session.prompt_sha256(prompt) == frozen
+    as_crlf = tmp_path / "prompt.md"
+    as_crlf.write_bytes(prompt.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+    assert session.prompt_sha256(as_crlf) == frozen
+
+
+def test_gitattributes_keeps_the_prompt_and_notes_on_lf_line_endings():
+    lines = (ROOT / ".gitattributes").read_text().splitlines()
+    assert "src/assistant/prompt.md text eol=lf" in lines
+    assert "plant-notes/*.md text eol=lf" in lines

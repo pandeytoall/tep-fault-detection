@@ -40,6 +40,31 @@ def test_test_set_crops_are_in_0_to_80_and_spread(test_key):
     assert test_key["crop"].max() > 60 and test_key["crop"].min() < 20  # uniform, not constant
 
 
+def test_test_set_end_crops_are_in_0_to_80_spread_and_independent_of_the_start_crops(test_key):
+    assert test_key["end_crop"].between(0, 80).all()
+    assert test_key["end_crop"].max() > 60 and test_key["end_crop"].min() < 20
+    assert abs(np.corrcoef(test_key["crop"], test_key["end_crop"])[0, 1]) < 0.4
+
+
+def test_onset_is_not_a_function_of_case_length_on_the_test_set(test_key):
+    """Without the end crop, length = 960 - crop and onset = 160 - crop: onset = length - 800. With it, they differ."""
+    faulty = test_key[test_key["fault"] > 0].copy()
+    faulty["n_samples"] = 960 - faulty["crop"] - faulty["end_crop"]
+    same_length = faulty.groupby("n_samples")["onset_h"].nunique()
+    assert (same_length >= 2).any()                                    # equal length, different onset
+    # the old leak was onset = length - 40 h exactly; now the gap is the end crop, spread over about 4 hours
+    gap = faulty["onset_h"] - (faulty["n_samples"] * 0.05 - 40)
+    assert gap.max() - gap.min() > 3.0 and gap.nunique() > 20
+    # length still carries part of the information (both depend on the start crop): correlation about 0.7, not 1
+    assert abs(np.corrcoef(faulty["n_samples"], faulty["onset_h"])[0, 1]) < 0.9
+
+
+def test_onset_is_not_a_function_of_case_length_on_the_dev_set(dev_key):
+    faulty = dev_key[dev_key["fault"] > 0].copy()
+    faulty["n_samples"] = 500 - faulty["crop"] - faulty["end_crop"]
+    assert not np.allclose(faulty["n_samples"] * 0.05 - 24, faulty["onset_h"])
+
+
 def test_test_set_ids_are_case_01_to_case_70_in_a_shuffled_order(test_key):
     assert list(test_key["case_id"]) == [f"case_{i:02d}" for i in range(1, 71)]
     faults = list(test_key["fault"])
@@ -63,7 +88,7 @@ def test_test_set_is_the_testing_family_with_onset_in_historian_hours(test_key):
 
 def test_answer_key_carries_the_scoring_unit(test_key):
     assert all(row.unit == EXPECTED_UNIT[row.fault] for row in test_key.itertuples())
-    assert list(test_key.columns) == ["case_id", "set", "family", "fault", "run", "crop", "unit", "onset_h"]
+    assert list(test_key.columns) == ["case_id", "set", "family", "fault", "run", "crop", "end_crop", "unit", "onset_h"]
 
 
 def test_dev_set_uses_each_dev_run_id_once(dev_key):
@@ -79,7 +104,7 @@ def test_dev_set_has_16_different_faults_and_4_normal(dev_key):
 
 def test_dev_set_is_the_training_family_with_short_crops(dev_key):
     assert set(dev_key["family"]) == {"training"} and set(dev_key["set"]) == {"dev"}
-    assert dev_key["crop"].between(0, 10).all()
+    assert dev_key["crop"].between(0, 10).all() and dev_key["end_crop"].between(0, 10).all()
     assert list(dev_key["case_id"]) == [f"dev_{i:02d}" for i in range(1, 21)]
     faulty = dev_key[dev_key["fault"] > 0]
     assert np.allclose(faulty["onset_h"], (20 - faulty["crop"]) * 0.05) and faulty["onset_h"].between(0.5, 1).all()
@@ -105,6 +130,12 @@ def test_crop_drops_the_first_samples_and_restarts_the_clock_at_zero():
     assert out["t_hours"].iloc[0] == 0.0 and out["t_hours"].iloc[1] == 0.05
     assert out["t_hours"].iloc[-1] == pytest.approx(26 * 0.05)
     assert list(out.columns) == ["t_hours"] + data.VARIABLES
+
+
+def test_end_crop_drops_the_last_samples_and_leaves_the_clock_alone():
+    out = cases.crop_run(_run_frame(30), crop=3, end_crop=4)
+    assert len(out) == 23 and out["xmeas_1"].iloc[0] == 4.0 and out["xmeas_1"].iloc[-1] == 26.0
+    assert out["t_hours"].iloc[0] == 0.0 and out["t_hours"].iloc[-1] == pytest.approx(22 * 0.05)
 
 
 def test_the_first_faulty_sample_sits_at_the_key_onset_hour():
@@ -156,12 +187,13 @@ def test_load_case_frames_picks_each_case_run_from_the_right_file_and_crops_it(t
     _write_parquet(tmp_path / "TEP_Faulty_Training.parquet", {2: [5, 6], 7: [5, 8]})
     _write_parquet(tmp_path / "TEP_FaultFree_Training.parquet", {0: [5, 6, 8]})
     key = pd.DataFrame({"case_id": ["dev_01", "dev_02", "dev_03"], "set": "dev", "family": "training",
-                        "fault": [2, 7, 0], "run": [6, 8, 8], "crop": [0, 4, 2]})
+                        "fault": [2, 7, 0], "run": [6, 8, 8], "crop": [0, 4, 2],
+                        "end_crop": [0, 5, 1]})
     out = cases.load_case_frames(key, tmp_path)
     assert list(out) == ["dev_01", "dev_02", "dev_03"]
     assert len(out["dev_01"]) == 40 and out["dev_01"]["xmeas_1"].iloc[0] == 1 + 2000 + 60_000
-    assert len(out["dev_02"]) == 36 and out["dev_02"]["xmeas_1"].iloc[0] == 5 + 7000 + 80_000
-    assert len(out["dev_03"]) == 38 and out["dev_03"]["xmeas_1"].iloc[0] == 3 + 0 + 80_000
+    assert len(out["dev_02"]) == 31 and out["dev_02"]["xmeas_1"].iloc[0] == 5 + 7000 + 80_000
+    assert len(out["dev_03"]) == 37 and out["dev_03"]["xmeas_1"].iloc[0] == 3 + 0 + 80_000
     assert out["dev_03"]["t_hours"].iloc[0] == 0.0
 
 
@@ -194,3 +226,23 @@ def test_repeat_subset_is_ten_distinct_test_cases_chosen_by_the_seed(test_key):
     chosen = cases.repeat_subset(test_key)
     assert len(chosen) == len(set(chosen)) == 10 and set(chosen) <= set(test_key["case_id"])
     assert chosen == cases.repeat_subset(test_key) == sorted(chosen)
+
+
+# --- the one-off rebuild of an unused test set ---------------------------------------------------------
+def test_an_unused_test_set_can_be_unfrozen_once(tmp_path):
+    key, db, answers = tmp_path / "k.csv", tmp_path / "h.sqlite", tmp_path / "answers_test.jsonl"
+    key.write_text("x")
+    db.write_text("x")
+    cases.unfreeze_unused_test(key, db, answers)
+    assert not key.exists() and not db.exists()
+    cases.guard_frozen("test", [key, db])      # now it may be built again
+
+
+def test_a_test_set_with_recorded_sessions_stays_frozen(tmp_path):
+    key, db, answers = tmp_path / "k.csv", tmp_path / "h.sqlite", tmp_path / "answers_test.jsonl"
+    key.write_text("x")
+    db.write_text("x")
+    answers.write_text("{}")
+    with pytest.raises(FileExistsError, match="stays frozen"):
+        cases.unfreeze_unused_test(key, db, answers)
+    assert key.exists() and db.exists()

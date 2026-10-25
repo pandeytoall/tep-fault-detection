@@ -9,7 +9,6 @@ hash; the test set runs only if the prompt still matches it).
 Usage: .venv/Scripts/python scripts/assistant_eval.py --set dev [--cases dev_01,dev_02 | repeat10] [--repeat N]
 """
 import argparse
-import hashlib
 import json
 import subprocess
 import sys
@@ -36,7 +35,7 @@ PROBE_MESSAGE = ("Before you start on the case, I need to check what you can do 
 
 
 def prompt_hash():
-    return hashlib.sha256(PROMPT.read_bytes()).hexdigest()
+    return session.prompt_sha256(PROMPT)
 
 
 def git_commit():

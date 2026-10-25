@@ -10,6 +10,7 @@ with OAuth, so the same effect comes from these flags):
 - `--system-prompt-file src/assistant/prompt.md`  replaces the default Claude Code system prompt;
 - `--no-session-persistence`, a fresh empty temp folder as cwd, CLAUDE_CODE_DISABLE_AUTO_MEMORY=1.
 """
+import hashlib
 import json
 import os
 import shutil
@@ -31,6 +32,11 @@ class SessionError(RuntimeError):
 
 class RateLimited(SessionError):
     """The account's usage limit was hit; no answer was produced and nothing should be recorded."""
+
+
+def prompt_sha256(path):
+    """SHA-256 of a text file with CRLF read as LF, so a checkout with other line endings keeps the same hash."""
+    return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def find_claude():

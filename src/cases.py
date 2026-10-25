@@ -1,10 +1,12 @@
 """Case sets for the assistant (phase 2b): which runs, how they are cropped, and the answer keys.
 
-A case is one TEP run with its first `crop` samples removed; the historian clock restarts at 0 h at the first kept
-sample, so the fault start is hidden. Two sets:
-- test: testing family, 3 runs per fault 1-20 plus 10 fault-free runs = 70 cases, crop uniform 0-80. FROZEN: built
-  once, reused unchanged by v1, v2 and v3 (guard_frozen refuses a rebuild).
-- dev: training family, only the `dev` run IDs, 16 faults plus 4 normal, crop uniform 0-10; for prompt iteration.
+A case is one TEP run with its first `crop` and its last `end_crop` samples removed (independent seed-42 draws); the
+historian clock restarts at 0 h at the first kept sample. The start crop hides the fault start, the end crop keeps the
+case length from giving it away (length = N - crop - end_crop, onset = onset_sample - crop). Two sets:
+- test: testing family, 3 runs per fault 1-20 plus 10 fault-free runs = 70 cases, crop and end_crop uniform 0-80.
+  FROZEN: built once, reused unchanged by v1, v2 and v3 (guard_frozen refuses a rebuild; the one exception is a
+  rebuild before any session has been recorded, see unfreeze_unused_test).
+- dev: training family, only the `dev` run IDs, 16 faults plus 4 normal, crop and end_crop uniform 0-10; for prompt iteration.
 Every case has its own run ID (runs with one number share a noise stream within a family, ADR 0003).
 The answer key (case, fault, run, crop, scoring unit, onset in historian hours) is read only by src/assistant/score.py.
 """
@@ -16,7 +18,7 @@ import pandas as pd
 from src import contributions, data, historian, mspc
 
 SEED = 42
-KEY_COLUMNS = ["case_id", "set", "family", "fault", "run", "crop", "unit", "onset_h"]
+KEY_COLUMNS = ["case_id", "set", "family", "fault", "run", "crop", "end_crop", "unit", "onset_h"]
 
 # IDV -> scoring unit, from Downs & Vogel (1993) as listed in research/tep-flowsheet.md, section 5.
 _UNIT_BY_FAULT = {**{f: "feeds" for f in (1, 2, 3, 6, 7, 8, 9, 10)}, **{f: "reactor" for f in (4, 11, 13, 14)},
@@ -33,16 +35,21 @@ def onset_hours(onset_sample, crop):
     return round((onset_sample - crop) * data.HOURS_PER_SAMPLE, 2)
 
 
-def _key(set_name, family, faults, runs, crops, rng, prefix):
+def _key(set_name, family, faults, runs, crops, end_crops, rng, prefix):
     """Shuffle the (fault, run, crop) rows and number them prefix_01, prefix_02, ..."""
     onset = data.ONSET[family.title()]
-    rows = pd.DataFrame({"fault": faults, "run": runs, "crop": crops}).iloc[rng.permutation(len(faults))]
+    rows = pd.DataFrame({"fault": faults, "run": runs, "crop": crops, "end_crop": end_crops}).iloc[rng.permutation(len(faults))]
     rows = rows.reset_index(drop=True)
     rows.insert(0, "case_id", [f"{prefix}_{i:02d}" for i in range(1, len(rows) + 1)])
     rows["set"], rows["family"] = set_name, family
     rows["unit"] = [case_unit(f) for f in rows["fault"]]
     rows["onset_h"] = [onset_hours(onset, c) if f > 0 else np.nan for f, c in zip(rows["fault"], rows["crop"])]
-    return rows[KEY_COLUMNS].astype({"fault": int, "run": int, "crop": int})
+    return rows[KEY_COLUMNS].astype({"fault": int, "run": int, "crop": int, "end_crop": int})
+
+
+def _end_crops(seed, high, size):
+    """End crops uniform on 0..high-1 from their own stream, independent of the run, start-crop and order draws."""
+    return np.random.default_rng([seed, 1]).integers(0, high, size=size)
 
 
 def build_test_key(seed=SEED):
@@ -51,7 +58,8 @@ def build_test_key(seed=SEED):
     faults = [f for f in range(1, 21) for _ in range(3)] + [0] * 10
     runs = rng.choice(np.arange(1, 501), size=len(faults), replace=False)
     crops = rng.integers(0, 81, size=len(faults))
-    return _key("test", "testing", faults, runs, crops, rng, "case")
+    end_crops = _end_crops(seed, 81, len(faults))
+    return _key("test", "testing", faults, runs, crops, end_crops, rng, "case")
 
 
 def build_dev_key(dev_ids, seed=SEED):
@@ -62,7 +70,8 @@ def build_dev_key(dev_ids, seed=SEED):
     faults = sorted(int(f) for f in rng.choice(np.arange(1, 21), size=16, replace=False)) + [0] * 4
     runs = rng.permutation(np.asarray(sorted(dev_ids)))
     crops = rng.integers(0, 11, size=len(faults))
-    return _key("dev", "training", faults, runs, crops, rng, "dev")
+    end_crops = _end_crops(seed, 11, len(faults))
+    return _key("dev", "training", faults, runs, crops, end_crops, rng, "dev")
 
 
 def guard_frozen(set_name, paths):
@@ -75,6 +84,15 @@ def guard_frozen(set_name, paths):
                               + ", ".join(existing))
 
 
+def unfreeze_unused_test(key_path, db_path, answers_path):
+    """One-off: delete the built test key and historian so the test set can be rebuilt, but only while no session
+    has been recorded (answers file absent). Raises FileExistsError otherwise."""
+    if Path(answers_path).exists():
+        raise FileExistsError(f"test sessions are already recorded in {answers_path}; the test set stays frozen")
+    for path in (key_path, db_path):
+        Path(path).unlink(missing_ok=True)
+
+
 def write_answer_key(key, path, machine):
     """Write the answer key CSV with a machine column. The frozen test key is never overwritten."""
     path = Path(path)
@@ -83,9 +101,11 @@ def write_answer_key(key, path, machine):
     key.assign(machine=machine).to_csv(path, index=False)
 
 
-def crop_run(frame, crop):
-    """A run without its first `crop` samples, with t_hours (0 at the first kept sample) and the 52 variables."""
-    kept = frame[frame["sample"] > crop].sort_values("sample")
+def crop_run(frame, crop, end_crop=0):
+    """A run without its first `crop` and last `end_crop` samples, with t_hours (0 at the first kept sample) and the
+    52 variables."""
+    last = frame["sample"].max() - end_crop
+    kept = frame[(frame["sample"] > crop) & (frame["sample"] <= last)].sort_values("sample")
     t = np.round((kept["sample"].to_numpy() - crop - 1) * data.HOURS_PER_SAMPLE, 2)
     out = kept[data.VARIABLES].reset_index(drop=True)
     out.insert(0, "t_hours", t)
@@ -105,7 +125,7 @@ def load_case_frames(key, processed_dir=data.PROCESSED):
             run = frame[frame["simulationRun"] == row.run]
             if run.empty:
                 raise ValueError(f"{name} has no run {row.run} for {row.case_id}")
-            out[row.case_id] = crop_run(run, row.crop)
+            out[row.case_id] = crop_run(run, row.crop, row.end_crop)
     return {case_id: out[case_id] for case_id in key["case_id"]}
 
 

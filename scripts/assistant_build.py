@@ -4,7 +4,8 @@ Steps: (1) add the normal reference to results/phase-2/pca.npz if it has none (m
 `fit` normal runs); (2) per set, pick the cases (src/cases.py), load and crop their runs, write
 data/processed/historian_{set}.sqlite and results/phase-2b/answer_key_{set}.csv; (3) print and save the sanity checks.
 The test set is FROZEN: if its key or historian exists the script stops before doing anything. --dev-only rebuilds dev.
-Usage: .venv/Scripts/python scripts/assistant_build.py [--dev-only]
+--rebuild-unused-test is a one-off: it deletes and rebuilds the test set, but refuses once answers_test.jsonl exists.
+Usage: .venv/Scripts/python scripts/assistant_build.py [--dev-only | --rebuild-unused-test]
 """
 import argparse
 import json
@@ -59,10 +60,15 @@ def build_set(set_name, monitor, machine):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dev-only", action="store_true", help="rebuild the dev set only (the test set is frozen)")
+    parser.add_argument("--rebuild-unused-test", action="store_true",
+                        help="one-off: rebuild the test set too; refused once any test session is recorded")
     args = parser.parse_args()
     t0 = time.perf_counter()
     machine = prepare.machine_label(prepare.cpu_name(), psutil.virtual_memory().total)
     sets = ["dev"] if args.dev_only else ["dev", "test"]
+    if args.rebuild_unused_test:
+        key_path, db_path = paths("test")
+        cases.unfreeze_unused_test(key_path, db_path, OUT / "answers_test.jsonl")
     if "test" in sets:
         cases.guard_frozen("test", paths("test"))  # stop before touching anything
     OUT.mkdir(parents=True, exist_ok=True)
