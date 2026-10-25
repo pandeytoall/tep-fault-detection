@@ -216,23 +216,3 @@ def test_repeat_subset_is_ten_distinct_test_cases_chosen_by_the_seed(test_key):
     chosen = cases.repeat_subset(test_key)
     assert len(chosen) == len(set(chosen)) == 10 and set(chosen) <= set(test_key["case_id"])
     assert chosen == cases.repeat_subset(test_key) == sorted(chosen)
-
-
-# --- the one-off rebuild of an unused test set ---------------------------------------------------------
-def test_an_unused_test_set_can_be_unfrozen_once(tmp_path):
-    key, db, answers = tmp_path / "k.csv", tmp_path / "h.sqlite", tmp_path / "answers_test.jsonl"
-    key.write_text("x")
-    db.write_text("x")
-    cases.unfreeze_unused_test(key, db, answers)
-    assert not key.exists() and not db.exists()
-    cases.guard_frozen("test", [key, db])      # now it may be built again
-
-
-def test_a_test_set_with_recorded_sessions_stays_frozen(tmp_path):
-    key, db, answers = tmp_path / "k.csv", tmp_path / "h.sqlite", tmp_path / "answers_test.jsonl"
-    key.write_text("x")
-    db.write_text("x")
-    answers.write_text("{}")
-    with pytest.raises(FileExistsError, match="stays frozen"):
-        cases.unfreeze_unused_test(key, db, answers)
-    assert key.exists() and db.exists()

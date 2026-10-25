@@ -5,8 +5,7 @@ A case is one TEP run with its first `crop` and its last `end_crop` samples remo
 maximum crop (max_crop - crop), so every case of a set has the same length and the length gives nothing away
 (test 880 samples = 44 h, dev 490 samples; onset = onset_sample - crop). Two sets:
 - test: testing family, 3 runs per fault 1-20 plus 10 fault-free runs = 70 cases, crop uniform 0-80, end_crop 80 - crop.
-  FROZEN: built once, reused unchanged by v1, v2 and v3 (guard_frozen refuses a rebuild; the one exception is a
-  rebuild before any session has been recorded, see unfreeze_unused_test).
+  FROZEN: built once, reused unchanged by v1, v2 and v3 (guard_frozen refuses a rebuild).
 - dev: training family, only the `dev` run IDs, 16 faults plus 4 normal, crop uniform 0-10, end_crop 10 - crop; for prompt iteration.
 Every case has its own run ID (runs with one number share a noise stream within a family, ADR 0003).
 The answer key (case, fault, run, crop, scoring unit, onset in historian hours) is read only by src/assistant/score.py.
@@ -78,15 +77,6 @@ def guard_frozen(set_name, paths):
     if existing:
         raise FileExistsError("the test set is frozen and already built; never rebuild or edit it: "
                               + ", ".join(existing))
-
-
-def unfreeze_unused_test(key_path, db_path, answers_path):
-    """One-off: delete the built test key and historian so the test set can be rebuilt, but only while no session
-    has been recorded (answers file absent). Raises FileExistsError otherwise."""
-    if Path(answers_path).exists():
-        raise FileExistsError(f"test sessions are already recorded in {answers_path}; the test set stays frozen")
-    for path in (key_path, db_path):
-        Path(path).unlink(missing_ok=True)
 
 
 def write_answer_key(key, path, machine):

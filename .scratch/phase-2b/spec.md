@@ -111,3 +111,9 @@ Rules: the `tep-data` skill wins on any conflict; flag it if so. Design decision
 - Posts, pushing to GitHub.
 
 ## Comments
+- 2026-10-25, user: end crop added so every case has the same length (test 880 samples, dev 490), and the test set was rebuilt before any test session. The test run went ahead without the step-3 stop (pre-approved).
+- 2026-10-25, orchestrator: /ml-review **PASS**. Test set: unit accuracy 27/36 = 0.75 [0.59, 0.86] vs no-LLM baseline 15/36 and chance 18/36. IDV top-1 25/60, top-3 35/60. Normal 10/10 called normal; 3/9/15 9/9 "can't tell" or normal; repeat agreement 9/10 (no upgrade). 90 sessions, $4.19. Checked by me: 285 tests, headline recount 27/36, only `tep` tools in all 90 sessions, one model and one prompt hash, historian schema, 70 distinct runs, constant case length.
+  - Trivial fix during review: removed the `--rebuild-unused-test` escape hatch and its two tests, now that the test set is in use (283 tests pass).
+  - Deliberate exceptions: `answers_{set}.jsonl` is append-only (repeat top-ups), not overwritten on rerun. Headline and IDV metrics use repeat 1 of each case.
+  - Noted for the results write-up: the frozen prompt mildly pushes toward finding a fault ("do not dismiss one because the alarms are quiet or late"). Faults 16-18 and 20 are flagged every time with a made-up unit; fault 19 never. The no-LLM baseline (0.42) is below chance (0.50).
+  - Carried to phase 3 as cleanup (minor): one hour-window filter and tolerance constant shared by `server.py`, `contributions.py` and `historian.py`; reuse `evaluate.HARD_FAULTS` in `score.py`; one shared path for `pca.npz` and `results/phase-2b`; check the identical fault 6 top-5 lists against normal-case lists; optionally score faults 16-20 against their true status.
