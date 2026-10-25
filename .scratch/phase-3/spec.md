@@ -30,7 +30,7 @@ Rules: the `tep-data` skill wins on any conflict; flag it if so. Terms: `CONTEXT
   - **Tuning** over learning_rate {0.05, 0.1} × max_leaf_nodes {31, 63} × max_iter {200, 400}, 8 fits.
     - Each fit gets a 1% limit from the `limit_tune` normal runs.
     - Each fit is scored on the `dev` faulty runs plus the `dev` normal runs.
-    - Pick the highest dev mean FDR excluding 3/9/15. On a tie within 0.005, pick the fewer total trees.
+    - Pick the highest dev mean FDR excluding 3/9/15. Among fits within 0.005 of the best, pick the one with the fewest total trees.
     - Save the grid to `results/phase-3/hgb_tuning.csv`.
   - The chosen fit is the final model, with no refit on more data.
 - **Limits:** for every model, 1% and 5% from `limit_for_far` on all 100 `limit` normal runs. ML models have no textbook limit. Limits are stored with each model.
@@ -39,6 +39,7 @@ Rules: the `tep-data` skill wins on any conflict; flag it if so. Terms: `CONTEXT
   - Its 1% limit comes from the `limit` runs.
   - Report test FDR on those 5 faults for `hgb-l2-unseen`, `hgb-l2` and `pca-spe`. Write it to `results/phase-3/unseen_fault.csv`. Add a scorecard row block for `hgb-l2-unseen`.
 - **Model files:** saved under `data/models/` (git-ignored). Each file records its training run IDs, hyperparameters and limits. `results/phase-3/models.json` lists each file with its SHA-256, so a later phase can tell which model the assistant used.
+- **Resources:** score IF and HGB in chunks of about 100k rows. Set `OMP_NUM_THREADS` to 6 or fewer, since HGB ignores `n_jobs`.
 - **Final scoring:** `scripts/ml_final.py` loads saved models only, so it never fits or picks. It reads `FaultFree_Testing` (500 runs) and `Faulty_Testing` one fault at a time. Each model gets scorecard rows at 1% and 5% via `write_scorecard`, with train time (fit only; for hgb the chosen fit only, with grid time logged separately), peak RAM and machine. It also writes `results/phase-3/fdr_by_fault.csv`: the wide view, all phase 2 and phase 3 models at 1%, plus FAR, with the track shown.
 - **Charts** (`results/phase-3/figures/`, `tep-data` style, `src/style.py` helper):
   - `fdr-by-fault-unsupervised.png`: test FDR per fault at 1% for PCA SPE, the best IF and the best AE. The title states the finding.
@@ -47,11 +48,12 @@ Rules: the `tep-data` skill wins on any conflict; flag it if so. Terms: `CONTEXT
 ## Assistant v1.1
 - New MCP tools, reading the same per-case historian:
   - `score_model(model, start_h, end_h, step=1)`: per-sample alarm score with its 1% limit, for model in {iforest-l0, iforest-l2, ae-l0, ae-l2, hgb-l2}. Same 2,000-value cap as `score_pca`.
-  - `classify_fault(start_h=None, end_h=None)`: the `hgb-l2` class probabilities averaged over the window (default: the whole case), returned as the top 3 classes with their probabilities. Class 0 is shown as "normal".
+  - `classify_fault(start_h=None, end_h=None)`: the `hgb-l2` class probabilities averaged over the window (default: the whole case), returned as the top 3 classes with their probabilities. Class 0 is shown as "normal". Default window: the first PCA SPE `raise` to the end of the case (as for `top_contributors`); with no raise, the whole case.
   - The alarm log stays PCA-based. No new tables, and no case data beyond what v1 had.
 - **Prompt v1.1:** `src/assistant/prompt.md` adds only a short description of the new tools; the answer block is unchanged. Develop it on the dev set (20 cases) only. Then freeze it, with its own hash, and keep the v1 hash file. Answers go to `answers_test_v1.1.jsonl` and `answers_dev_v1.1.jsonl`, so the v1 files stay untouched. The scorer takes a version argument.
-- **Test rerun:** 70 cases × 1, plus the same 10 repeat cases × 3. The same < 8 of 10 upgrade rule applies.
-- **Scoring:** a v1 vs v1.1 table, case by case: headline, IDV top-1 and top-3, normal, 3/9/15, 16-20, baseline and chance. Also count the cases that flipped from wrong to right and from right to wrong.
+- **Dev check before writing the prompt:** report `hgb-l2` top-1 and top-3 class accuracy over the dev cases (default window), and how it labels dev faults 3/9/15.
+- **Test rerun:** 70 cases × 1, plus the same 10 repeat cases × 3. The same < 8 of 10 upgrade rule applies. **One test rerun only: no prompt or tool iteration after it, whatever the result.**
+- **Scoring:** a v1 vs v1.1 table, case by case: headline, IDV top-1 and top-3, normal, 3/9/15, 16-20, baseline and chance. Also count the cases that flipped from wrong to right and from right to wrong. Split the v1.1 results by whether the session called `classify_fault`; tool calls per session are already logged. Report the HGB-assisted number as a separate claim. `classify_fault` is closed-set (it only knows faults 1-20); the unseen-fault result shows its limit.
 - **Leak caution, to state in the results:** `hgb-l2` is trained on labelled training-family runs. So v1.1's IDV gain comes from a supervised classifier trained on labelled plant history, which is a different claim from v1's reasoning-only diagnosis. The test cases are all testing-family runs, which share no noise with training runs (ADR 0003).
 
 ## Carry-over cleanup (phase 2b review minors), own commit `phase 3: phase 2b review cleanup`
@@ -71,6 +73,8 @@ Rules: the `tep-data` skill wins on any conflict; flag it if so. Terms: `CONTEXT
    - hgb labels follow the onset rule, and the alarm is 1 − P(normal)
    - the unseen-fault training set contains no rows of faults 1, 8, 13, 14, 16
    - save/load round-trips give identical scores
+   - each saved model's run IDs lie in its allowed group: IF and AE (train and validation) in `fit`, HGB in `supervised`, limits in `limit`, HGB tuning limits in `limit_tune`
+   - limits drop each run's first `skip` samples
    - the new MCP tools see only their case and respect the cap
    - `classify_fault` returns 3 classes with probabilities summing to at most 1
    - the scorer's version handling, including a v1 vs v1.1 flip count on a hand-made file
@@ -94,6 +98,7 @@ Rules: the `tep-data` skill wins on any conflict; flag it if so. Terms: `CONTEXT
   - Faults 1, 2, 4, 6 and 7 have FDR of at least 0.9 for `hgb-l2`.
   - Faults 3, 9 and 15 have FDR of at most 0.10 at the 1% limit for every unsupervised model.
   - For `hgb-l2`, any FDR on 3/9/15 above 0.10 is listed and explained before it's reported. Supervised models can learn weak signatures, but more than 0.5 means stop.
+- Autoencoder sanity gate (report only, no tuning after it): AE FDR on faults 1, 2, 6 and 7 next to PCA SPE, with final train and validation MSE. A near-identity AE (FDR far below PCA) is a finding to report, not a reason to retune.
 - `hgb-l2-unseen` does worse than `hgb-l2` on most of the 5 unseen faults. If not, explain it.
 - The assistant v1.1 test run uses the frozen v1.1 prompt hash in all sessions, with no non-`tep` tools.
 - Peak RAM under 5 GB for every script. Machine recorded in every results file.
@@ -105,3 +110,5 @@ Rules: the `tep-data` skill wins on any conflict; flag it if so. Terms: `CONTEXT
 - Posts, pushing to GitHub.
 
 ## Comments
+- 2026-10-25, user: autoencoder via scikit-learn MLP; IF and AE at L = 0 and L = 2; one assistant rerun with all new tools.
+- 2026-10-25, critic (sonnet, medium): AGREE WITH CHANGES. All applied: v1.1 split by `classify_fault` use and labelled a separate claim; one test rerun, no iteration; AE sanity gate; run-group tests for saved models; dev check of HGB class accuracy; chunked scoring and OMP threads; tie rule fixed; `classify_fault` window starts at the first SPE raise.
