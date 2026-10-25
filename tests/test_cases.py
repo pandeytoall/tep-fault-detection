@@ -40,29 +40,19 @@ def test_test_set_crops_are_in_0_to_80_and_spread(test_key):
     assert test_key["crop"].max() > 60 and test_key["crop"].min() < 20  # uniform, not constant
 
 
-def test_test_set_end_crops_are_in_0_to_80_spread_and_independent_of_the_start_crops(test_key):
+def test_every_test_case_has_the_same_length_so_length_says_nothing_about_onset(test_key):
+    assert (test_key["crop"] + test_key["end_crop"] == 80).all()
     assert test_key["end_crop"].between(0, 80).all()
-    assert test_key["end_crop"].max() > 60 and test_key["end_crop"].min() < 20
-    assert abs(np.corrcoef(test_key["crop"], test_key["end_crop"])[0, 1]) < 0.4
+    assert (960 - test_key["crop"] - test_key["end_crop"]).nunique() == 1
+    assert (960 - test_key["crop"] - test_key["end_crop"]).iloc[0] == 880      # 44 h
+    faulty = test_key[test_key["fault"] > 0]
+    assert faulty["onset_h"].nunique() > 20                                    # onsets still differ
 
 
-def test_onset_is_not_a_function_of_case_length_on_the_test_set(test_key):
-    """Without the end crop, length = 960 - crop and onset = 160 - crop: onset = length - 800. With it, they differ."""
-    faulty = test_key[test_key["fault"] > 0].copy()
-    faulty["n_samples"] = 960 - faulty["crop"] - faulty["end_crop"]
-    same_length = faulty.groupby("n_samples")["onset_h"].nunique()
-    assert (same_length >= 2).any()                                    # equal length, different onset
-    # the old leak was onset = length - 40 h exactly; now the gap is the end crop, spread over about 4 hours
-    gap = faulty["onset_h"] - (faulty["n_samples"] * 0.05 - 40)
-    assert gap.max() - gap.min() > 3.0 and gap.nunique() > 20
-    # length still carries part of the information (both depend on the start crop): correlation about 0.7, not 1
-    assert abs(np.corrcoef(faulty["n_samples"], faulty["onset_h"])[0, 1]) < 0.9
-
-
-def test_onset_is_not_a_function_of_case_length_on_the_dev_set(dev_key):
-    faulty = dev_key[dev_key["fault"] > 0].copy()
-    faulty["n_samples"] = 500 - faulty["crop"] - faulty["end_crop"]
-    assert not np.allclose(faulty["n_samples"] * 0.05 - 24, faulty["onset_h"])
+def test_every_dev_case_has_the_same_length(dev_key):
+    assert (dev_key["crop"] + dev_key["end_crop"] == 10).all()
+    assert (500 - dev_key["crop"] - dev_key["end_crop"]).unique().tolist() == [490]
+    assert dev_key.loc[dev_key["fault"] > 0, "onset_h"].nunique() > 5
 
 
 def test_test_set_ids_are_case_01_to_case_70_in_a_shuffled_order(test_key):

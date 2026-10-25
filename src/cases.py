@@ -1,12 +1,13 @@
 """Case sets for the assistant (phase 2b): which runs, how they are cropped, and the answer keys.
 
-A case is one TEP run with its first `crop` and its last `end_crop` samples removed (independent seed-42 draws); the
-historian clock restarts at 0 h at the first kept sample. The start crop hides the fault start, the end crop keeps the
-case length from giving it away (length = N - crop - end_crop, onset = onset_sample - crop). Two sets:
-- test: testing family, 3 runs per fault 1-20 plus 10 fault-free runs = 70 cases, crop and end_crop uniform 0-80.
+A case is one TEP run with its first `crop` and its last `end_crop` samples removed; the historian clock restarts at
+0 h at the first kept sample. The start crop (seed-42 draw) hides the fault start; the end crop is the rest of the
+maximum crop (max_crop - crop), so every case of a set has the same length and the length gives nothing away
+(test 880 samples = 44 h, dev 490 samples; onset = onset_sample - crop). Two sets:
+- test: testing family, 3 runs per fault 1-20 plus 10 fault-free runs = 70 cases, crop uniform 0-80, end_crop 80 - crop.
   FROZEN: built once, reused unchanged by v1, v2 and v3 (guard_frozen refuses a rebuild; the one exception is a
   rebuild before any session has been recorded, see unfreeze_unused_test).
-- dev: training family, only the `dev` run IDs, 16 faults plus 4 normal, crop and end_crop uniform 0-10; for prompt iteration.
+- dev: training family, only the `dev` run IDs, 16 faults plus 4 normal, crop uniform 0-10, end_crop 10 - crop; for prompt iteration.
 Every case has its own run ID (runs with one number share a noise stream within a family, ADR 0003).
 The answer key (case, fault, run, crop, scoring unit, onset in historian hours) is read only by src/assistant/score.py.
 """
@@ -47,18 +48,13 @@ def _key(set_name, family, faults, runs, crops, end_crops, rng, prefix):
     return rows[KEY_COLUMNS].astype({"fault": int, "run": int, "crop": int, "end_crop": int})
 
 
-def _end_crops(seed, high, size):
-    """End crops uniform on 0..high-1 from their own stream, independent of the run, start-crop and order draws."""
-    return np.random.default_rng([seed, 1]).integers(0, high, size=size)
-
-
 def build_test_key(seed=SEED):
     """Answer key of the frozen test set: 70 distinct testing-family runs, crop uniform on 0-80."""
     rng = np.random.default_rng(seed)
     faults = [f for f in range(1, 21) for _ in range(3)] + [0] * 10
     runs = rng.choice(np.arange(1, 501), size=len(faults), replace=False)
     crops = rng.integers(0, 81, size=len(faults))
-    end_crops = _end_crops(seed, 81, len(faults))
+    end_crops = 80 - crops
     return _key("test", "testing", faults, runs, crops, end_crops, rng, "case")
 
 
@@ -70,7 +66,7 @@ def build_dev_key(dev_ids, seed=SEED):
     faults = sorted(int(f) for f in rng.choice(np.arange(1, 21), size=16, replace=False)) + [0] * 4
     runs = rng.permutation(np.asarray(sorted(dev_ids)))
     crops = rng.integers(0, 11, size=len(faults))
-    end_crops = _end_crops(seed, 11, len(faults))
+    end_crops = 10 - crops
     return _key("dev", "training", faults, runs, crops, end_crops, rng, "dev")
 
 
