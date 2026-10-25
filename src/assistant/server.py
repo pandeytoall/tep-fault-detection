@@ -17,12 +17,11 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:  # run as a script from any working directory
     sys.path.insert(0, str(ROOT))
 
-from src import contributions, historian, mspc  # noqa: E402
+from src import contributions, data, historian, mspc  # noqa: E402
 
 MAX_VALUES = 2000
-DEFAULT_MODEL = ROOT / "results" / "phase-2" / "pca.npz"
+DEFAULT_MODEL = data.PCA_MODEL
 DEFAULT_NOTES = ROOT / "plant-notes"
-TOLERANCE_H = 1e-6
 
 
 def _round(values, digits=5):
@@ -55,9 +54,7 @@ class TepTools:
         """Rows of a frame with a t_hours column inside [start_h, end_h], every step-th one."""
         if int(step) < 1:
             raise ValueError("step must be a whole number of samples, 1 or more")
-        t = frame["t_hours"].to_numpy()
-        keep = (t >= float(start_h) - TOLERANCE_H) & (t <= float(end_h) + TOLERANCE_H)
-        rows = frame[keep].iloc[::int(step)]
+        rows = frame[historian.window_mask(frame["t_hours"].to_numpy(), start_h, end_h)].iloc[::int(step)]
         if rows.empty:
             raise ValueError(f"no samples between {start_h} and {end_h} h; this case runs from "
                              f"{self.span[0]} to {self.span[1]} h")

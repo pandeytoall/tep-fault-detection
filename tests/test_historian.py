@@ -167,3 +167,21 @@ def test_alarms_window_filter(db):
     late = view.alarms(start_h=60 * T)
     assert len(late) <= len(full) and (late["t_hours"] >= 60 * T - 1e-9).all()
     assert view.alarms(end_h=-1.0).empty
+
+
+# --- the one hour-window filter and tolerance shared by historian, contributions and the server -----
+def test_window_mask_is_inclusive_with_one_tolerance_and_none_means_unbounded():
+    t = np.round(np.arange(6) * T, 2)                       # 0, .05, .1, .15, .2, .25
+    assert list(historian.window_mask(t, 0.1, 0.2)) == [False, False, True, True, True, False]
+    assert list(historian.window_mask(t, None, 0.05)) == [True, True, False, False, False, False]
+    assert list(historian.window_mask(t, 0.2, None)) == [False] * 4 + [True, True]
+    assert historian.window_mask(t, None, None).all()
+    # float noise inside the shared tolerance still counts as inside
+    assert historian.window_mask(np.array([0.1 + 0.5 * historian.TOLERANCE_H]), 0.1 - 0.5 * historian.TOLERANCE_H, 0.1)[0]
+    assert historian.TOLERANCE_H == 1e-6
+
+
+def test_one_tolerance_constant_serves_every_module():
+    from src import contributions
+    from src.assistant import server
+    assert not hasattr(contributions, "TOLERANCE_H") and not hasattr(server, "TOLERANCE_H")

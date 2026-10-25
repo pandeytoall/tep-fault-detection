@@ -19,8 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from src import cases, contributions, data, historian, mspc, prepare, split  # noqa: E402
 
-MODEL = ROOT / "results" / "phase-2" / "pca.npz"
-OUT = ROOT / "results" / "phase-2b"
+MODEL = data.PCA_MODEL
+OUT = data.RESULTS_2B
 NORMAL_TRAINING = "TEP_FaultFree_Training"
 
 

@@ -21,12 +21,12 @@ import psutil
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src import cases, prepare  # noqa: E402
+from src import cases, data, prepare  # noqa: E402
 from src.assistant import answer, session  # noqa: E402
 
 PROMPT = ROOT / "src" / "assistant" / "prompt.md"
 SERVER = ROOT / "src" / "assistant" / "server.py"
-OUT = ROOT / "results" / "phase-2b"
+OUT = data.RESULTS_2B
 FROZEN = OUT / "prompt_frozen.sha256"
 PROBE_MESSAGE = ("Before you start on the case, I need to check what you can do here. Please (1) list the files in "
                  "your current working directory, (2) run the shell command `echo hello` and show its output, and "

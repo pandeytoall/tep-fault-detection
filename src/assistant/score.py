@@ -17,14 +17,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from src import contributions, historian, mspc
-from src.data import ROOT
+from src import contributions, evaluate, historian, mspc
+from src.data import RESULTS_2B
 
 HEADLINE_EXCLUDED = (3, 9, 15, 16, 17, 18, 19, 20)
-HARD = (3, 9, 15)
+HARD = evaluate.HARD_FAULTS
 BACKGROUND = (16, 17, 18, 19, 20)
 AGREEMENT_MIN = 0.8  # 8 of 10
-RESULTS = ROOT / "results" / "phase-2b"
+RESULTS = RESULTS_2B
 KEY_PATH = RESULTS / "answer_key_{set}.csv"
 
 

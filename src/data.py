@@ -10,6 +10,8 @@ import pyarrow.parquet as pq
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
 PROCESSED = ROOT / "data" / "processed"
+PCA_MODEL = ROOT / "results" / "phase-2" / "pca.npz"  # the PCA monitor the assistant uses
+RESULTS_2B = ROOT / "results" / "phase-2b"
 
 # Smallest first. Rows and samples per run from the tep-data skill.
 FILES = {

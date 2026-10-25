@@ -10,11 +10,11 @@ contribution of a window is its mean c_j divided by max(reference_j, FLOOR_SHARE
 import numpy as np
 import pandas as pd
 
+from src.historian import window_mask
 from src.variables import VARIABLE_INFO, scoring_unit
 
 FLOOR_SHARE = 0.01
 STATISTICS = ("spe", "t2")
-TOLERANCE_H = 1e-6
 
 
 def scale(monitor, x):
@@ -85,13 +85,7 @@ def window_start(alarms, statistic):
 
 def window_rows(matrix, start_h, end_h):
     """Rows of a case matrix (t_hours column) with start_h <= t <= end_h; None means unbounded."""
-    t = matrix["t_hours"].to_numpy()
-    keep = np.ones(len(t), dtype=bool)
-    if start_h is not None:
-        keep &= t >= start_h - TOLERANCE_H
-    if end_h is not None:
-        keep &= t <= end_h + TOLERANCE_H
-    return matrix[keep]
+    return matrix[window_mask(matrix["t_hours"].to_numpy(), start_h, end_h)]
 
 
 def baseline_unit(monitor, reference, matrix, alarms):

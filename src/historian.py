@@ -17,6 +17,22 @@ from src.data import ID_COLUMNS, VARIABLES
 IN_A_ROW = 3
 LIMIT_NAME = "1%"
 STATISTICS = ("t2", "spe")
+TOLERANCE_H = 1e-6  # float slack on every hour window
+
+
+def window_bounds(start_h, end_h):
+    """(lo, hi) of an inclusive hour window with the shared tolerance; None means unbounded."""
+    lo = -np.inf if start_h is None else float(start_h) - TOLERANCE_H
+    hi = np.inf if end_h is None else float(end_h) + TOLERANCE_H
+    return lo, hi
+
+
+def window_mask(t_hours, start_h, end_h):
+    """Boolean mask of the times inside [start_h, end_h]; the one window filter used by the historian, the
+    contribution windows and the MCP server."""
+    lo, hi = window_bounds(start_h, end_h)
+    t = np.asarray(t_hours, dtype=float)
+    return (t >= lo) & (t <= hi)
 
 
 def alarm_events(t_hours, values, limit, n=IN_A_ROW):
@@ -113,8 +129,7 @@ class CaseView:
             raise ValueError("give at least one tag")
         if int(step) < 1:
             raise ValueError("step must be a whole number of samples, 1 or more")
-        lo = -np.inf if start_h is None else float(start_h) - 1e-6
-        hi = np.inf if end_h is None else float(end_h) + 1e-6
+        lo, hi = window_bounds(start_h, end_h)
         marks = ",".join("?" * len(tags))
         long = pd.read_sql_query(
             f"select t_hours, tag, value from readings where case_id = ? and tag in ({marks}) "
@@ -125,8 +140,7 @@ class CaseView:
 
     def alarms(self, start_h=None, end_h=None):
         """The alarm log of this case as DataFrame t_hours, statistic, event, value, limit."""
-        lo = -np.inf if start_h is None else float(start_h) - 1e-6
-        hi = np.inf if end_h is None else float(end_h) + 1e-6
+        lo, hi = window_bounds(start_h, end_h)
         return pd.read_sql_query(
             'select t_hours, statistic, event, value, "limit" from alarms where case_id = ? '
             "and t_hours >= ? and t_hours <= ? order by t_hours, statistic", self._con,

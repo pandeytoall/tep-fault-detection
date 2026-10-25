@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 from src import data, prepare  # noqa: E402
 from src.assistant import score  # noqa: E402
 
-MODEL = ROOT / "results" / "phase-2" / "pca.npz"
+MODEL = data.PCA_MODEL
 
 
 def main():

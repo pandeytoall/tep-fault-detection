@@ -247,3 +247,8 @@ def test_minutes_per_sample_matches_the_sampling_interval():
     from src import evaluate
     assert evaluate.MINUTES_PER_SAMPLE == 3 and isinstance(evaluate.MINUTES_PER_SAMPLE, int)
     assert evaluate.MINUTES_PER_SAMPLE == round(data.HOURS_PER_SAMPLE * 60)
+
+
+def test_shared_paths_for_the_pca_model_and_the_phase_2b_results():
+    assert data.PCA_MODEL == data.ROOT / "results" / "phase-2" / "pca.npz"
+    assert data.RESULTS_2B == data.ROOT / "results" / "phase-2b"
