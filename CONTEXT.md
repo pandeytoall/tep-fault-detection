@@ -69,3 +69,27 @@ _Avoid_: Q statistic (in posts)
 
 **Textbook limit**:
 An alarm limit computed from a statistical formula (F-distribution for T², Jackson-Mudholkar for SPE) instead of from held-back normal runs. Reported for MSPC only; it assumes Gaussian data and can miss its FAR target.
+
+**Historian**:
+The replayed plant history the assistant reads: time-stamped values of the 52 readings for one **case**, with a clock that starts at 0 h. It holds no labels.
+
+**Alarm log**:
+The record of PCA alarms for a case: a raise at the third of three samples in a row above the 1% limit, a clear at the third of three in a row below it.
+
+**Case**:
+One run, cropped at both ends, presented to the assistant under a neutral ID so that its fault, run number and onset are hidden. Cases come in a dev set (training family, for tuning the assistant) and a frozen test set (testing family, reused unchanged by every assistant version).
+_Avoid_: sample, run (when meaning a case)
+
+**Scoring unit**:
+One of five plant areas a diagnosis must name: feeds, reactor, condenser/separator, compressor/recycle, stripper. IDV 16-20 have no scoring unit.
+_Avoid_: unit (alone, since it also means engineering unit)
+
+**Relative contribution**:
+How much one reading adds to T² or SPE over a time window, divided by what it adds on normal runs. About 1 is normal; a high value marks a reading to look at, not a cause, because contributions smear across correlated readings.
+
+**Diagnosis**:
+The assistant's fixed answer for a case: status (fault, normal or can't tell), scoring unit, up to three IDV guesses, and the evidence it used.
+
+**Unit accuracy**:
+The headline assistant score: the share of fault cases (excluding faults 3, 9, 15 and 16-20) where the diagnosis says "fault" and names the right scoring unit. Reported as a count with a 95% interval, next to a no-LLM baseline and chance.
+_Avoid_: diagnosis accuracy (too vague)
