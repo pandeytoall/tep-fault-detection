@@ -16,7 +16,7 @@ The alarm log records events per statistic.
 - `raise`: at the third of three consecutive samples above the limit.
 - `clear`: at the third of three consecutive samples below the limit, after a raise.
 
-Samples are 3 minutes apart, so a raise is logged 9 minutes (the third sample) after the exceedances begin. The raise time is therefore later than the moment the readings first moved. A case with no raise has no logged alarm; that does not by itself prove it is normal or faulty.
+Samples are 3 minutes apart, so a raise is logged at the third sample above the limit, 6 minutes after the first one. The raise time is therefore later than the moment the readings first moved. A case with no raise has no logged alarm; that does not by itself prove it is normal or faulty.
 
 ## Relative contribution
 For each statistic the total value is split across the 52 readings, giving each reading a contribution. The tools average these over a time window (by default from the first raise to the end of the case, or the whole case if there was no raise) and divide by that reading's average contribution on normal data.
