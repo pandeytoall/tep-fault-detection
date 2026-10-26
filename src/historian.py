@@ -52,15 +52,20 @@ def alarm_events(t_hours, values, limit, n=IN_A_ROW):
     return events
 
 
-def score_case(monitor, matrix):
-    """DataFrame t_hours, t2, spe: the (lag-free) PCA scores of one case matrix (t_hours + the 52 variables)."""
-    if monitor.lags != 0:
-        raise ValueError("the assistant uses PCA without lags")
+def case_frame(matrix):
+    """A case matrix (t_hours + the 52 variables) as a one-run frame with the ID columns, ready for any monitor."""
     frame = matrix[VARIABLES].copy()
     frame.insert(0, "sample", np.arange(1, len(frame) + 1))
     frame.insert(0, "simulationRun", 1)
     frame.insert(0, "faultNumber", 0)
-    scores = monitor.score(frame[ID_COLUMNS + VARIABLES])
+    return frame[ID_COLUMNS + VARIABLES]
+
+
+def score_case(monitor, matrix):
+    """DataFrame t_hours, t2, spe: the (lag-free) PCA scores of one case matrix (t_hours + the 52 variables)."""
+    if monitor.lags != 0:
+        raise ValueError("the assistant uses PCA without lags")
+    scores = monitor.score(case_frame(matrix))
     return pd.DataFrame({"t_hours": matrix["t_hours"].to_numpy(), "t2": scores["t2"].to_numpy(),
                          "spe": scores["spe"].to_numpy()})
 

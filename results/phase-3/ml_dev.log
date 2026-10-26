@@ -1,0 +1,33 @@
+scaler from pca.npz; L = 2; bottleneck b = {0: 31, 2: 68}
+iforest-l0: fit 1 s
+ae-l0: fit 56 s, 46 epochs (best 41), train MSE 0.1132, validation MSE 0.1135
+iforest-l2: fit 1 s
+ae-l2: fit 342 s, 65 epochs (best 60), train MSE 0.1532, validation MSE 0.1530
+  grid lr 0.05 leaves 31 iter 200: dev mean FDR excl 3/9/15 0.9346, all 0.7962, dev FAR 0.0100, fit 522 s
+  grid lr 0.05 leaves 31 iter 400: dev mean FDR excl 3/9/15 0.9401, all 0.8013, dev FAR 0.0105, fit 1006 s
+  grid lr 0.05 leaves 63 iter 200: dev mean FDR excl 3/9/15 0.9390, all 0.8002, dev FAR 0.0120, fit 739 s
+  grid lr 0.05 leaves 63 iter 400: dev mean FDR excl 3/9/15 0.9418, all 0.8032, dev FAR 0.0122, fit 1364 s
+  grid lr 0.1 leaves 31 iter 200: dev mean FDR excl 3/9/15 0.0014, all 0.0016, dev FAR 0.0032, fit 427 s
+  grid lr 0.1 leaves 31 iter 400: dev mean FDR excl 3/9/15 0.0000, all 0.0000, dev FAR 0.0000, fit 645 s
+  grid lr 0.1 leaves 63 iter 200: dev mean FDR excl 3/9/15 0.9407, all 0.8021, dev FAR 0.0110, fit 904 s
+  grid lr 0.1 leaves 63 iter 400: dev mean FDR excl 3/9/15 0.9414, all 0.8030, dev FAR 0.0112, fit 920 s
+hgb chosen: {'learning_rate': 0.1, 'max_leaf_nodes': 63, 'max_iter': 200} (grid 7947 s for 8 fits; chosen fit 904 s)
+hgb-l2-unseen: classes [0, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 15, 17, 18, 19, 20], fit 307 s
+dev FAR at 1%: iforest-l0 0.0101, ae-l0 0.0100, iforest-l2 0.0121, ae-l2 0.0112, hgb-l2 0.0108, hgb-l2-unseen 0.0122
+dev FAR at 5%: iforest-l0 0.0436, ae-l0 0.0496, iforest-l2 0.0475, ae-l2 0.0529, hgb-l2 0.0489, hgb-l2-unseen 0.0453
+dev FDR at the 1% limit
+model  ae-l0  ae-l2  hgb-l2  hgb-l2-unseen  iforest-l0  iforest-l2
+fault                                                             
+1.0    0.996  0.995   0.995          0.990       0.779       0.852
+2.0    0.971  0.968   0.981          0.982       0.938       0.935
+4.0    0.999  1.000   1.000          1.000       0.018       0.018
+6.0    1.000  1.000   1.000          1.000       0.984       0.985
+7.0    1.000  1.000   1.000          1.000       0.598       0.627
+3.0    0.010  0.011   0.020          0.024       0.011       0.013
+9.0    0.011  0.011   0.014          0.016       0.009       0.012
+15.0   0.011  0.013   0.013          0.013       0.012       0.014
+model                 ae-l0  ae-l2  hgb-l2  hgb-l2-unseen  iforest-l0  iforest-l2
+metric                                                                           
+mean_fdr              0.632  0.650   0.802          0.779       0.385       0.394
+mean_fdr_excl_3_9_15  0.741  0.763   0.940          0.913       0.451       0.461
+runtime 8862.2 s, peak RAM 2.79 GB

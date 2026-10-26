@@ -55,3 +55,5 @@ def load_runs(name, runs, faults=None, processed_dir=PROCESSED):
 def labels(frame, name):
     """int8 label per row: 1 only if faultNumber > 0 and sample > onset of the file family, else 0."""
     return ((frame["faultNumber"].to_numpy() > 0) & (frame["sample"].to_numpy() > onset_for(name))).astype(np.int8)
+MODELS_DIR = ROOT / "data" / "models"  # saved phase 3 models (git-ignored with the rest of data/)
+RESULTS_3 = ROOT / "results" / "phase-3"

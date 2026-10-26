@@ -1,13 +1,15 @@
-"""The `tep` MCP server (stdio): tools over one case of a replayed historian, the PCA monitor and the plant notes.
+"""The `tep` MCP server (stdio): tools over one case of a replayed historian, the monitors and the plant notes.
 
 Started per session as `python src/assistant/server.py --case <id> --set <test|dev>`. It sees only that case. It reads
-only its set's SQLite file (readings and alarm log), the PCA model file (loadings, 1% limits, normal reference) and the
-plant-notes folder; it never opens an answer key or a data file.
-Tools: query_historian, get_alarms, score_pca, top_contributors, list_notes, read_note.
+only its set's SQLite file (readings and alarm log), the PCA model file (loadings, 1% limits, normal reference), the
+saved phase 3 model files (loaded when first used) and the plant-notes folder; it never opens an answer key or a data file.
+Tools: query_historian, get_alarms, score_pca, top_contributors, list_notes, read_note (v1);
+score_model, classify_fault (v1.1).
 """
 import argparse
 import functools
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -17,11 +19,18 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:  # run as a script from any working directory
     sys.path.insert(0, str(ROOT))
 
-from src import contributions, data, historian, mspc  # noqa: E402
+from src import contributions, data, historian, models, mspc  # noqa: E402
 
 MAX_VALUES = 2000
 DEFAULT_MODEL = data.PCA_MODEL
 DEFAULT_NOTES = ROOT / "plant-notes"
+CLASSIFIER = "hgb-l2"
+TOP_CLASSES = 3
+_ALARM_MEANS = {
+    "iforest": "Isolation Forest anomaly score: higher = more isolated = less normal",
+    "ae": "autoencoder reconstruction error per sample (mean squared, on scaled readings): higher = less normal",
+    "hgb": "1 - P(normal) from the 21-class gradient boosting model: near 0 = looks normal, near 1 = looks like a fault",
+}
 
 
 def _round(values, digits=5):
@@ -36,8 +45,11 @@ def _dump(obj):
 class TepTools:
     """The tool logic for one case, independent of MCP (the MCP layer in build_server only wraps it)."""
 
-    def __init__(self, db_path, case_id, model_path=DEFAULT_MODEL, notes_dir=DEFAULT_NOTES, max_values=MAX_VALUES):
+    def __init__(self, db_path, case_id, model_path=DEFAULT_MODEL, notes_dir=DEFAULT_NOTES, max_values=MAX_VALUES,
+                 models_dir=data.MODELS_DIR):
         self.view = historian.CaseView(db_path, case_id)
+        self.models_dir = Path(models_dir)
+        self._monitors, self._model_scores, self._class_proba = {}, {}, None
         self.monitor = mspc.PCAMonitor.load(model_path)
         self.reference = contributions.load_reference(model_path)
         if self.monitor.limits is None or self.reference is None:
@@ -127,6 +139,59 @@ class TepTools:
                       "note": "ratio = mean contribution in the window / mean contribution in normal operation",
                       "top": top})
 
+    def _monitor(self, name):
+        """A saved model by its assistant name, loaded the first time it is used."""
+        if name not in models.ASSISTANT_MODELS:
+            raise ValueError(f"model must be one of {list(models.ASSISTANT_MODELS)}, got {name!r}")
+        if name not in self._monitors:
+            self._monitors[name] = models.load(self.models_dir / f"{name}.joblib")
+        return self._monitors[name]
+
+    def score_model(self, model, start_h, end_h, step=1):
+        """Alarm score of one saved model per sample between start_h and end_h (inclusive), every step-th sample, plus its
+        1% alarm limit."""
+        monitor = self._monitor(model)
+        if model not in self._model_scores:
+            self._model_scores[model] = models.score_case(monitor, self._matrix)
+        rows = self._window(self._model_scores[model], start_h, end_h, step)
+        rows, note = self._capped(rows, ["alarm"])
+        out = {"model": model, "alarm_means": _ALARM_MEANS[monitor.kind],
+               "t_hours": [float(round(t, 2)) for t in rows["t_hours"]], "alarm": _round(rows["alarm"]),
+               "limit": float(f"{monitor.limits[historian.LIMIT_NAME]:.5g}"), "limit_name": historian.LIMIT_NAME,
+               "truncated": note is not None}
+        notes = [note] if note else []
+        if monitor.lags:
+            notes.append(f"{model} looks back {monitor.lags} samples, so the first {monitor.lags} samples of the case "
+                         "have no score.")
+        if notes:
+            out["note"] = " ".join(notes)
+        return _dump(out)
+
+    def classify_fault(self, start_h=None, end_h=None):
+        """The hgb-l2 class probabilities averaged over a window, as the top classes. Default window: from the first SPE
+        raise to the end of the case, or the whole case if SPE never raised."""
+        classifier = self._monitor(CLASSIFIER)
+        if self._class_proba is None:
+            self._class_proba = models.class_probabilities_case(classifier, self._matrix)
+        if start_h is None and end_h is None:
+            start = contributions.window_start(self.view.alarms(), "spe")
+            window = ("default: whole case (no SPE raise in the alarm log)" if start is None
+                      else "default: from the first SPE raise to the end of the case")
+        else:
+            window, start = "as requested", start_h
+        rows = contributions.window_rows(self._class_proba, start, end_h)
+        if rows.empty:
+            raise ValueError(f"no samples between {start_h} and {end_h} h; this case runs from {self.span[0]} to "
+                             f"{self.span[1]} h")
+        mean = rows.drop(columns="t_hours").mean().sort_values(ascending=False, kind="stable").head(TOP_CLASSES)
+        return _dump({"window": window,
+                      "window_hours": [float(rows["t_hours"].iloc[0]), float(rows["t_hours"].iloc[-1])],
+                      "n_samples": int(len(rows)),
+                      "note": "mean class probability over the window from a supervised classifier that knows only "
+                              "'normal' and IDV 1-20; the probabilities of the other classes are not shown",
+                      "top": [{"class": models.class_label(k), "probability": math.floor(p * 1e4) / 1e4}
+                              for k, p in mean.items()]})
+
     def _notes(self):
         return {p.stem: p for p in sorted(self.notes_dir.glob("*.md"))}
 
@@ -154,7 +219,7 @@ def build_server(tools):
     from mcp.server.mcpserver.exceptions import ToolError
 
     mcp = MCPServer("tep", instructions="Tools over one replayed TEP case: historian, PCA alarm log, PCA scores, "
-                                        "top contributing readings and plant notes.")
+                                        "top contributing readings, other monitors' scores, a fault classifier and plant notes.")
 
     def guarded(fn):
         @functools.wraps(fn)
@@ -197,6 +262,22 @@ def build_server(tools):
 
     @mcp.tool()
     @guarded
+    def score_model(model: str, start_h: float, end_h: float, step: int = 1) -> str:
+        """Alarm score per sample of one saved monitor between start_h and end_h hours (inclusive), every step-th sample,
+        with its 1% alarm limit. model is one of iforest-l0, iforest-l2, ae-l0, ae-l2, hgb-l2. At most 2000 values
+        come back."""
+        return tools.score_model(model, start_h, end_h, step)
+
+    @mcp.tool()
+    @guarded
+    def classify_fault(start_h: float | None = None, end_h: float | None = None) -> str:
+        """The three most likely classes (normal or IDV 1-20) with their probabilities, from a supervised model averaged
+        over a window. Default window: from the first SPE raise to the end of the case, or the whole case if it never
+        raised."""
+        return tools.classify_fault(start_h, end_h)
+
+    @mcp.tool()
+    @guarded
     def list_notes() -> str:
         """Names and titles of the plant notes (process description, tag list, disturbance list, monitor guide)."""
         return tools.list_notes()
@@ -217,9 +298,10 @@ def main(argv=None):
     parser.add_argument("--db", help="override the historian file (tests)")
     parser.add_argument("--model", default=str(DEFAULT_MODEL))
     parser.add_argument("--notes", default=str(DEFAULT_NOTES))
+    parser.add_argument("--models", default=str(data.MODELS_DIR))
     args = parser.parse_args(argv)
     db = args.db or ROOT / "data" / "processed" / f"historian_{args.case_set}.sqlite"
-    build_server(TepTools(db, args.case, args.model, args.notes)).run()
+    build_server(TepTools(db, args.case, args.model, args.notes, models_dir=args.models)).run()
 
 
 if __name__ == "__main__":

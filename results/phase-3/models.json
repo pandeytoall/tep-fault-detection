@@ -1,0 +1,144 @@
+{
+ "machine": "laptop, Intel i5-1135G7, 7.7 GB RAM",
+ "split_file": "results/phase-1/run_split.json",
+ "models": [
+  {
+   "name": "iforest-l0",
+   "file": "data/models/iforest-l0.joblib",
+   "sha256": "71eb090157509144f5417a76f9f72bb52fb499e2a9be8b483881b4797bc13861",
+   "kind": "iforest",
+   "track": "unsupervised",
+   "lags": 0,
+   "hyperparameters": {
+    "n_estimators": 200,
+    "max_samples": 256,
+    "random_state": 42
+   },
+   "limits": {
+    "1%": 0.5099601396122071,
+    "5%": 0.4867274295302711
+   },
+   "n_train_runs": 330,
+   "n_val_runs": 0,
+   "train_time_s": 0.5842933999992965
+  },
+  {
+   "name": "ae-l0",
+   "file": "data/models/ae-l0.joblib",
+   "sha256": "3a2f774b3cdad9b265367cc5129253b7bd962e11659c12d3c6246d6275eef562",
+   "kind": "ae",
+   "track": "unsupervised",
+   "lags": 0,
+   "hyperparameters": {
+    "bottleneck": 31,
+    "hidden_layer_sizes": [
+     62,
+     31,
+     62
+    ],
+    "activation": "relu",
+    "solver": "adam",
+    "batch_size": 256,
+    "random_state": 42,
+    "max_epochs": 100,
+    "patience": 5
+   },
+   "limits": {
+    "1%": 0.2525179414246445,
+    "5%": 0.20086258245959682
+   },
+   "n_train_runs": 300,
+   "n_val_runs": 30,
+   "train_time_s": 55.901329199998145
+  },
+  {
+   "name": "iforest-l2",
+   "file": "data/models/iforest-l2.joblib",
+   "sha256": "58c23bd092cf8ac5da56e988669a85ea861897eb3049de72cf7c4f808fd68acb",
+   "kind": "iforest",
+   "track": "unsupervised",
+   "lags": 2,
+   "hyperparameters": {
+    "n_estimators": 200,
+    "max_samples": 256,
+    "random_state": 42
+   },
+   "limits": {
+    "1%": 0.5027161421705534,
+    "5%": 0.4810120154877445
+   },
+   "n_train_runs": 330,
+   "n_val_runs": 0,
+   "train_time_s": 1.3522378000016033
+  },
+  {
+   "name": "ae-l2",
+   "file": "data/models/ae-l2.joblib",
+   "sha256": "a01116714c4440d137b04c624f0807c81a4a2490b5614333c4a1f19af76d0c7b",
+   "kind": "ae",
+   "track": "unsupervised",
+   "lags": 2,
+   "hyperparameters": {
+    "bottleneck": 68,
+    "hidden_layer_sizes": [
+     136,
+     68,
+     136
+    ],
+    "activation": "relu",
+    "solver": "adam",
+    "batch_size": 256,
+    "random_state": 42,
+    "max_epochs": 100,
+    "patience": 5
+   },
+   "limits": {
+    "1%": 0.2659273920727547,
+    "5%": 0.22540075585072245
+   },
+   "n_train_runs": 300,
+   "n_val_runs": 30,
+   "train_time_s": 341.733863999998
+  },
+  {
+   "name": "hgb-l2",
+   "file": "data/models/hgb-l2.joblib",
+   "sha256": "6880883009fa997db255f24f69579694876b12fa5ed5341ac8ffc6da7d8bc29e",
+   "kind": "hgb",
+   "track": "supervised",
+   "lags": 2,
+   "hyperparameters": {
+    "learning_rate": 0.1,
+    "max_leaf_nodes": 63,
+    "max_iter": 200
+   },
+   "limits": {
+    "1%": 0.9591863563793012,
+    "5%": 0.9105276526153723
+   },
+   "n_train_runs": 50,
+   "n_val_runs": 0,
+   "train_time_s": 903.8783484999985
+  },
+  {
+   "name": "hgb-l2-unseen",
+   "file": "data/models/hgb-l2-unseen.joblib",
+   "sha256": "d58e96cd780dc47a0c875ff18996882e4d32a4fcda190a756c145919bbd3cc31",
+   "kind": "hgb",
+   "track": "supervised",
+   "lags": 2,
+   "hyperparameters": {
+    "learning_rate": 0.1,
+    "max_leaf_nodes": 63,
+    "max_iter": 200
+   },
+   "limits": {
+    "1%": 0.9580956800646879,
+    "5%": 0.9122175121116273
+   },
+   "n_train_runs": 50,
+   "n_val_runs": 0,
+   "train_time_s": 307.21053200000097
+  }
+ ]
+}

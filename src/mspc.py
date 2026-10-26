@@ -41,10 +41,17 @@ def lagged_rows(frame, variables, lags):
     return ids[keep].reset_index(drop=True), x
 
 
+def scaled_frame(frame, variables, mean, std):
+    """ID columns plus the variables as (x - mean) / std; the one scaler every model uses (the PCA fit-run mean and std)."""
+    ids = frame[ID_COLUMNS].copy()
+    z = (frame[list(variables)].to_numpy(dtype=np.float64) - mean) / std
+    return pd.concat([ids, pd.DataFrame(z, columns=list(variables), index=ids.index)], axis=1)
+
+
 CHUNK_ROWS = 100_000  # scoring works on whole runs, about this many rows at a time
 
 
-def _run_chunks(frame):
+def run_chunks(frame):
     """Sorted frame cut at run boundaries into pieces of roughly CHUNK_ROWS rows."""
     frame = frame.sort_values(ID_COLUMNS, kind="stable")
     new_run = ~frame.duplicated(_RUN).to_numpy()
@@ -77,9 +84,7 @@ class PCAMonitor:
 
     # --- fitting ---------------------------------------------------------------
     def _scaled(self, frame):
-        scaled = frame[ID_COLUMNS].copy()
-        z = (frame[self.variables].to_numpy(dtype=np.float64) - self.mean) / self.std
-        return pd.concat([scaled, pd.DataFrame(z, columns=self.variables, index=scaled.index)], axis=1)
+        return scaled_frame(frame, self.variables, self.mean, self.std)
 
     def fit(self, frame):
         """Fit on fault-free runs (faultNumber 0 only). Returns self."""
@@ -112,7 +117,7 @@ class PCAMonitor:
         p = self.loadings[:, :self.n_pc]
         inv_lambda = 1.0 / self.eigvals[:self.n_pc]
         parts = []
-        for chunk in _run_chunks(frame):
+        for chunk in run_chunks(frame):
             ids, z = lagged_rows(self._scaled(chunk), self.variables, self.lags)
             t = z @ p
             ids["t2"] = (t ** 2) @ inv_lambda

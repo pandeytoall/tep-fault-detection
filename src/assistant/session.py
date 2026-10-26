@@ -4,7 +4,8 @@ Isolation (checked with claude 2.1.310; `--bare` is not usable because it needs 
 with OAuth, so the same effect comes from these flags):
 - `--tools ""`            no built-in tools at all (no file, shell, web or agent tools);
 - `--strict-mcp-config --mcp-config <json>`  only the `tep` server, started with `--case <id> --set <set>`;
-- `--allowedTools mcp__tep__*`  the six tep tools only; `--permission-prompts none` denies everything else;
+- `--allowedTools mcp__tep__*`  the tep tools of the version only (six in v1, eight in v1.1); `--permission-prompts none`
+  denies everything else;
 - `--setting-sources ""`  no user, project or local settings (so no user hooks, plugins or enabled plugins);
 - `--disable-slash-commands`  no skills or commands;
 - `--system-prompt-file src/assistant/prompt.md`  replaces the default Claude Code system prompt;
@@ -18,9 +19,16 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from src.data import RESULTS_2B
+
 MODEL = "claude-sonnet-5-5"
 TOOLS = ["query_historian", "get_alarms", "score_pca", "top_contributors", "list_notes", "read_note"]
 ALLOWED_TOOLS = [f"mcp__tep__{t}" for t in TOOLS]
+ASSISTANT_DIR = Path(__file__).resolve().parent
+TOOLS_V1_1 = TOOLS + ["score_model", "classify_fault"]
+# One entry per assistant version: its prompt file and its tools. v1 stays exactly as it was run.
+PROMPTS = {"v1": ASSISTANT_DIR / "prompt.md", "v1.1": ASSISTANT_DIR / "prompt_v1.1.md"}
+TOOLSETS = {"v1": TOOLS, "v1.1": TOOLS_V1_1}
 MAX_BUDGET_USD = 2
 TIMEOUT_S = 900
 USER_MESSAGE = "Diagnose the plant case in front of you."
@@ -32,6 +40,11 @@ class SessionError(RuntimeError):
 
 class RateLimited(SessionError):
     """The account's usage limit was hit; no answer was produced and nothing should be recorded."""
+
+
+def frozen_path(version):
+    """File holding the frozen prompt hash of a version (v1: prompt_frozen.sha256, v1.1: prompt_frozen_v1.1.sha256)."""
+    return RESULTS_2B / ("prompt_frozen.sha256" if version == "v1" else f"prompt_frozen_{version}.sha256")
 
 
 def prompt_sha256(path):
@@ -61,11 +74,11 @@ def mcp_config(python, server_script, case_id, set_name):
         str(server_script), "--case", case_id, "--set", set_name]}}})
 
 
-def build_command(claude_bin, user_message, prompt_path, mcp_json, model=MODEL):
+def build_command(claude_bin, user_message, prompt_path, mcp_json, model=MODEL, tools=TOOLS):
     """argv of the isolated session (see the module docstring for what each flag does)."""
     return [str(claude_bin), "-p", user_message, "--model", model, "--output-format", "stream-json", "--verbose",
             "--tools", "", "--strict-mcp-config", "--mcp-config", mcp_json,
-            "--allowedTools", ",".join(ALLOWED_TOOLS), "--permission-prompts", "none",
+            "--allowedTools", ",".join(f"mcp__tep__{t}" for t in tools), "--permission-prompts", "none",
             "--setting-sources", "", "--disable-slash-commands", "--no-session-persistence",
             "--system-prompt-file", str(prompt_path), "--max-budget-usd", str(MAX_BUDGET_USD)]
 
@@ -124,9 +137,10 @@ def outside_tools(parsed):
 
 
 def run_session(claude_bin, python, server_script, prompt_path, case_id, set_name, user_message=USER_MESSAGE,
-                timeout=TIMEOUT_S):
+                timeout=TIMEOUT_S, tools=TOOLS):
     """Run one session in a fresh empty temp folder. Returns (parsed stream dict, raw stdout, argv used)."""
-    cmd = build_command(claude_bin, user_message, prompt_path, mcp_config(python, server_script, case_id, set_name))
+    cmd = build_command(claude_bin, user_message, prompt_path, mcp_config(python, server_script, case_id, set_name),
+                        tools=tools)
     with tempfile.TemporaryDirectory(prefix="tep_session_") as cwd:
         if any(Path(cwd).iterdir()):
             raise SessionError("session folder is not empty")

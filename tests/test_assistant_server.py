@@ -159,7 +159,7 @@ def test_no_tool_takes_a_case_or_file_argument(world):
 
 
 # --- the MCP layer ----------------------------------------------------------------------------------------------------
-def test_the_mcp_server_exposes_exactly_the_six_tools_and_reports_errors_readably(world):
+def test_the_mcp_server_exposes_exactly_the_eight_tools_and_reports_errors_readably(world):
     from mcp import Client
 
     mcp_server = server.build_server(_tools(world))
@@ -172,7 +172,8 @@ def test_the_mcp_server_exposes_exactly_the_six_tools_and_reports_errors_readabl
             return names, ok, bad
 
     names, ok, bad = asyncio.run(run())
-    assert names == sorted(["query_historian", "get_alarms", "score_pca", "top_contributors", "list_notes", "read_note"])
+    assert names == sorted(["query_historian", "get_alarms", "score_pca", "top_contributors", "list_notes", "read_note",
+                            "score_model", "classify_fault"])
     assert not ok.is_error and "alarms" in ok.content[0].text
     assert bad.is_error and "unknown tag" in bad.content[0].text
 
