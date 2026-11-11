@@ -1,0 +1,23 @@
+20 sessions to run for 20 cases (dev, v1.1); prompt 93ef53d4a0c9
+dev_01 run 1: can't tell/unknown/[] tools 9 in 34525 out 1426 $0.040 16s
+dev_02 run 1: fault/reactor/[4, 11] tools 7 in 28045 out 921 $0.035 12s
+dev_03 run 1: fault/reactor/[11, 4, 3] tools 4 in 24093 out 665 $0.036 9s
+dev_04 run 1: normal/unknown/[] tools 6 in 23286 out 843 $0.027 12s
+dev_05 run 1: fault/feeds/[10, 15, 3] tools 6 in 27719 out 842 $0.033 10s
+dev_06 run 1: can't tell/unknown/[] tools 6 in 23317 out 1234 $0.030 14s
+dev_07 run 1: fault/feeds/[1, 8, 6] tools 6 in 23280 out 731 $0.024 16s
+dev_08 run 1: fault/feeds/[8, 1, 12] tools 5 in 16332 out 538 $0.021 8s
+dev_09 run 1: fault/reactor/[14, 11, 4] tools 6 in 24061 out 892 $0.029 11s
+dev_10 run 1: fault/reactor/[13, 8, 12] tools 6 in 24114 out 962 $0.029 12s
+dev_11 run 1: normal/unknown/[] tools 6 in 22590 out 1176 $0.029 13s
+dev_12 run 1: fault/compressor/recycle/[20, 15, 5] tools 5 in 21054 out 678 $0.032 11s
+dev_13 run 1: fault/feeds/[7, 6, 1] tools 5 in 15867 out 538 $0.020 8s
+dev_14 run 1: fault/stripper/[16, 15, 9] tools 6 in 28822 out 812 $0.034 10s
+dev_15 run 1: normal/unknown/[] tools 7 in 23770 out 1060 $0.030 13s
+dev_16 run 1: fault/condenser/separator/[5, 4, 12] tools 5 in 16476 out 747 $0.023 9s
+dev_17 run 1: fault/feeds/[2, 8, 13] tools 6 in 23572 out 843 $0.026 12s
+dev_18 run 1: fault/condenser/separator/[12, 5, 15] tools 6 in 25271 out 874 $0.030 11s
+dev_19 run 1: normal/unknown/[] tools 6 in 23110 out 1254 $0.031 16s
+dev_20 run 1: normal/unknown/[] tools 6 in 22791 out 925 $0.026 12s
+session cost this run: $0.59
+runtime 401.6 s, peak RAM 0.14 GB

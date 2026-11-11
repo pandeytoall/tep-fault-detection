@@ -1,0 +1,63 @@
+models: iforest-l0 (L=0), iforest-l2 (L=2), ae-l0 (L=0), ae-l2 (L=2), hgb-l2 (L=2), hgb-l2-unseen (L=2)
+hgb grid time (8 fits, logged apart from the model rows): 6528 s
+scored fault 1 (575 s)
+scored fault 2 (844 s)
+scored fault 3 (1158 s)
+scored fault 4 (1523 s)
+scored fault 5 (1863 s)
+scored fault 6 (2112 s)
+scored fault 7 (2417 s)
+scored fault 8 (2691 s)
+scored fault 9 (3009 s)
+scored fault 10 (3347 s)
+scored fault 11 (3658 s)
+scored fault 12 (3935 s)
+scored fault 13 (4209 s)
+scored fault 14 (4507 s)
+scored fault 15 (4836 s)
+scored fault 16 (5162 s)
+scored fault 17 (5467 s)
+scored fault 18 (5719 s)
+scored fault 19 (6036 s)
+scored fault 20 (6337 s)
+
+Test table at the 1% limit
+model                 iforest-l0  iforest-l2   ae-l0   ae-l2  hgb-l2  hgb-l2-unseen
+metric                                                                             
+far                       0.0109      0.0119  0.0105  0.0098  0.0107         0.0113
+mean_fdr                  0.3754      0.3858  0.6377  0.6550  0.8112         0.7900
+mean_fdr_excl_3_9_15      0.4393      0.4513  0.7482  0.7688  0.9512         0.9260
+sustained_rate            0.3940      0.5080  0.0480  0.0520  0.3460         0.3560
+test FAR at 5%: iforest-l0 0.0496, iforest-l2 0.0493, ae-l0 0.0521, ae-l2 0.0508, hgb-l2 0.0526, hgb-l2-unseen 0.0501
+
+FDR on faults 3, 9, 15 at 1%
+model  iforest-l0  iforest-l2  ae-l0  ae-l2  hgb-l2  hgb-l2-unseen
+fault                                                             
+3.0         0.012       0.013  0.011  0.010   0.021          0.023
+9.0         0.013       0.015  0.011  0.011   0.016          0.017
+15.0        0.015       0.017  0.012  0.011   0.016          0.017
+
+Autoencoder sanity gate: FDR on faults 1, 2, 6, 7 at 1% next to PCA SPE
+model  pca-spe  ae-l0  ae-l2
+fault                       
+1.0      0.997  0.997  0.997
+2.0      0.978  0.983  0.982
+6.0      1.000  1.000  1.000
+7.0      1.000  1.000  1.000
+ae-l0: 46 epochs, best 41, final train MSE 0.1132, validation MSE 0.1135
+ae-l2: 65 epochs, best 60, final train MSE 0.1532, validation MSE 0.1530
+
+hgb tuning choice: lr 0.1, leaves 63, iter 200 (dev mean FDR excl 3/9/15 0.9407)
+
+Unseen-fault test (test FDR at 1%)
+model  hgb-l2-unseen  hgb-l2  pca-spe
+fault                                
+1.0            0.993   0.996    0.997
+8.0            0.947   0.970    0.916
+13.0           0.942   0.946    0.938
+14.0           0.921   0.999    0.924
+16.0           0.513   0.852    0.256
+mean: {'hgb-l2-unseen': 0.863, 'hgb-l2': 0.953, 'pca-spe': 0.806}
+train time s: iforest-l0 1, iforest-l2 1, ae-l0 56, ae-l2 342, hgb-l2 904, hgb-l2-unseen 307; peak RAM GB: dev 2.79, final scoring 2.04
+chart models (best on dev): iforest-l2, ae-l2
+runtime 6361.5 s, peak RAM 2.04 GB

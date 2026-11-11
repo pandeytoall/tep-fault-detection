@@ -5,12 +5,14 @@ FaultFree_Testing runs and all 500 runs x 20 faults of Faulty_Testing (one fault
 1% and 5% limit to results/scorecard.csv beside PCA and DPCA. Also writes results/phase-3/{fdr_by_fault.csv, unseen_fault.csv}
 and figures/{fdr-by-fault-unsupervised.png, unseen-fault.png}. Exits with code 3 if a stop condition fails
 (models.final_check_failures); the scorecard is written first so the numbers can be read.
-Usage: .venv/Scripts/python scripts/ml_final.py
+--charts-only redraws the two charts from results/scorecard.csv and dev_scores.csv without scoring anything.
+Usage: .venv/Scripts/python scripts/ml_final.py [--charts-only]
 """
 import os
 
 os.environ.setdefault("OMP_NUM_THREADS", "6")  # HistGradientBoosting ignores n_jobs; cap its threads
 
+import argparse  # noqa: E402
 import json  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
@@ -69,6 +71,7 @@ def wide_table(scorecard):
     table = pd.concat([pd.DataFrame([track[cols]], index=["track"]), fdr.rename(index=str),
                        overall.loc[["far", "mean_fdr", "mean_fdr_excl_3_9_15"]]])
     table.index.name = "fault"
+    fdr.index = fdr.index.astype(int)
     return table, fdr
 
 
@@ -76,10 +79,10 @@ def dot_plot(fdr, series, title, path, figsize, colours, title_size=14):
     """One row per fault, one dot per model (`series` = [(column, label)]), a grey bar from the lowest to the highest."""
     faults = list(fdr.index)
     fig, ax = style.new_figure(figsize=figsize, font_size=14)
-    low, high = fdr[[c for c, _ in series]].min(axis=1), fdr[[c for c, _ in series]].max(axis=1)
+    low, high = fdr[[c for c, _, _ in series]].min(axis=1), fdr[[c for c, _, _ in series]].max(axis=1)
     for i, f in enumerate(faults):
         ax.plot([low[f], high[f]], [i, i], color="0.8", lw=2, zorder=1)
-    for (col, label), marker in zip(series, ("o", "s", "D")):
+    for col, label, marker in series:
         ax.scatter(fdr[col].values, range(len(faults)), color=colours[col], s=60, marker=marker, zorder=2, label=label)
     ax.set_yticks(range(len(faults)), [f"Fault {f}" for f in faults])
     ax.invert_yaxis()
@@ -97,21 +100,34 @@ def plot_unsupervised(fdr, if_name, ae_name, path):
     title = (f"PCA SPE has the highest FDR on {wins['pca-spe']} of 20 faults, {if_name} on {wins[if_name]},\n"
              f"{ae_name} on {wins[ae_name]} (1% FAR, test runs; ties count for each)")
     colours = {"pca-spe": COLOURS["pca-spe"], if_name: COLOURS["if"], ae_name: COLOURS["ae"]}
-    dot_plot(fdr, [("pca-spe", "PCA SPE"), (if_name, if_name.replace("iforest", "Isolation Forest")),
-                   (ae_name, ae_name.replace("ae", "Autoencoder"))], title, path, (8, 9.5), colours, title_size=13)
+    dot_plot(fdr, [("pca-spe", "PCA SPE", "o"), (if_name, if_name.replace("iforest", "Isolation Forest"), "s"),
+                   (ae_name, ae_name.replace("ae", "Autoencoder"), "D")], title, path, (8, 9.5), colours, title_size=13)
 
 
 def plot_unseen(unseen_table, path):
     full, left_out, pca = unseen_table["hgb-l2"].mean(), unseen_table[UNSEEN].mean(), unseen_table["pca-spe"].mean()
     verb = "falls" if left_out < full else "does not fall"
-    title = (f"Without training on them, gradient boosting {verb} from {full:.2f} to {left_out:.2f} mean FDR\n"
-             f"on faults {', '.join(str(f) for f in unseen_table.index)} (PCA SPE: {pca:.2f}; 1% FAR, test runs)")
+    title = (f"Without training on them, gradient boosting {verb}\n"
+             f"from {full:.2f} to {left_out:.2f} mean FDR on faults {', '.join(str(f) for f in unseen_table.index)}\n"
+             f"(PCA SPE: {pca:.2f}; 1% FAR, test runs)")
     colours = {"hgb-l2": COLOURS["hgb-l2"], UNSEEN: COLOURS["hgb-l2-unseen"], "pca-spe": COLOURS["pca-spe"]}
-    dot_plot(unseen_table, [("hgb-l2", "Boosting, all faults seen"), (UNSEEN, "Boosting, fault left out"),
-                            ("pca-spe", "PCA SPE")], title, path, (8, 5.5), colours, title_size=13)
+    dot_plot(unseen_table, [("hgb-l2", "Boosting, all faults seen", "s"), (UNSEEN, "Boosting, fault left out", "D"),
+                            ("pca-spe", "PCA SPE", "o")], title, path, (8, 6), colours, title_size=13)
+
+
+def charts_only():
+    """Redraw the charts from the saved scorecard (no model is loaded or scored)."""
+    scorecard = pd.read_csv(evaluate.DEFAULT_SCORECARD, dtype={"model": str, "limit_name": str})
+    _, fdr = wide_table(scorecard)
+    dev = pd.read_csv(OUT / "dev_scores.csv")
+    plot_unsupervised(fdr, best_by_dev(dev, "iforest"), best_by_dev(dev, "ae"),
+                      OUT / "figures" / "fdr-by-fault-unsupervised.png")
+    plot_unseen(fdr.loc[list(models.UNSEEN_FAULTS), [UNSEEN, SUPERVISED, "pca-spe"]], OUT / "figures" / "unseen-fault.png")
 
 
 def main():
+    if "--charts-only" in sys.argv[1:]:
+        return charts_only()
     t0 = time.perf_counter()
     machine = prepare.machine_label(prepare.cpu_name(), psutil.virtual_memory().total)
     monitors, record = load_saved_models()

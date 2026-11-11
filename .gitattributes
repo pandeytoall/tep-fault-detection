@@ -1,2 +1,3 @@
 src/assistant/prompt.md text eol=lf
 plant-notes/*.md text eol=lf
+src/assistant/prompt_v1.1.md text eol=lf
