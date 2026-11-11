@@ -1,0 +1,6 @@
+hgb-l2 top1 on dev cases: 15 / 16
+hgb-l2 top3 on dev cases: 16 / 16
+hgb-l2 normal on dev cases: 2 / 4
+per case (true fault: top-3): dev_01 (19): IDV 19, IDV 16, IDV 15; dev_02 (4): IDV 4, IDV 11, normal; dev_03 (11): IDV 11, IDV 3, IDV 4; dev_04 (3): IDV 3, IDV 15, normal; dev_05 (10): IDV 10, IDV 15, IDV 3; dev_06 (0): normal, IDV 9, IDV 15; dev_07 (1): IDV 1, IDV 8, IDV 20; dev_08 (8): IDV 8, IDV 12, IDV 1; dev_09 (14): IDV 14, IDV 19, IDV 11; dev_10 (13): IDV 13, IDV 8, IDV 12; dev_11 (0): IDV 15, normal, IDV 9; dev_12 (20): IDV 20, IDV 15, IDV 9; dev_13 (7): IDV 7, IDV 12, IDV 10; dev_14 (16): IDV 16, IDV 15, IDV 9; dev_15 (0): IDV 15, normal, IDV 9; dev_16 (5): IDV 5, IDV 12, IDV 20; dev_17 (2): IDV 2, IDV 8, IDV 13; dev_18 (12): IDV 12, IDV 18, IDV 13; dev_19 (0): normal, IDV 9, IDV 15; dev_20 (9): normal, IDV 15, IDV 9
+faults 3/9/15 as labelled: {'dev_04': ['IDV 3', 'IDV 15', 'normal'], 'dev_20': ['normal', 'IDV 15', 'IDV 9']}
+runtime 17.9 s, peak RAM 0.21 GB

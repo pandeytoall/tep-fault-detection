@@ -21,7 +21,6 @@ from pathlib import Path  # noqa: E402
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
-import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import psutil  # noqa: E402
 

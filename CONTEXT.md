@@ -93,3 +93,6 @@ The assistant's fixed answer for a case: status (fault, normal or can't tell), s
 **Unit accuracy**:
 The headline assistant score: the share of fault cases (excluding faults 3, 9, 15 and 16-20) where the diagnosis says "fault" and names the right scoring unit. Reported as a count with a 95% interval, next to a no-LLM baseline and chance.
 _Avoid_: diagnosis accuracy (too vague)
+
+**Closed-set classifier**:
+A supervised model that can only name faults it was trained on (here faults 1-20, plus normal). It is the `classify_fault` tool in assistant v1.1, so v1.1 scores measure "assistant plus a trained classifier", not diagnosis from reasoning alone.
