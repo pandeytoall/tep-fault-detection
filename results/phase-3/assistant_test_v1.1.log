@@ -1,0 +1,73 @@
+70 sessions to run for 70 cases (test, v1.1); prompt 93ef53d4a0c9
+case_01 run 1: fault/reactor/[13, 10, 8] tools 6 in 25052 out 777 $0.044 9s
+case_02 run 1: fault/compressor/recycle/[19, 15] tools 9 in 39245 out 1481 $0.050 15s
+case_03 run 1: normal/unknown/[] tools 6 in 23686 out 848 $0.029 10s
+case_04 run 1: fault/feeds/[2, 8] tools 5 in 15859 out 600 $0.020 7s
+case_05 run 1: normal/unknown/[] tools 6 in 25339 out 885 $0.033 10s
+case_06 run 1: fault/feeds/[7, 6, 1] tools 6 in 23222 out 693 $0.024 9s
+case_07 run 1: fault/stripper/[16, 10, 15] tools 6 in 31739 out 896 $0.040 10s
+case_08 run 1: fault/reactor/[13, 12, 18] tools 8 in 36872 out 1342 $0.047 14s
+case_09 run 1: fault/compressor/recycle/[19, 15, 9] tools 8 in 37252 out 1286 $0.043 13s
+case_10 run 1: fault/stripper/[16] tools 6 in 29752 out 847 $0.037 9s
+case_11 run 1: fault/reactor/[14] tools 6 in 23353 out 751 $0.025 9s
+case_12 run 1: fault/feeds/[10, 15, 9] tools 5 in 20139 out 779 $0.031 8s
+case_13 run 1: fault/feeds/[10, 15, 9] tools 7 in 29589 out 979 $0.040 10s
+case_14 run 1: normal/unknown/[] tools 6 in 23713 out 1173 $0.030 12s
+case_15 run 1: normal/unknown/[] tools 6 in 24633 out 1118 $0.032 12s
+case_16 run 1: fault/feeds/[18, 12, 13] tools 6 in 23917 out 961 $0.029 11s
+case_17 run 1: normal/unknown/[] tools 7 in 25953 out 1437 $0.041 14s
+case_18 run 1: fault/feeds/[1, 8, 6] tools 6 in 23379 out 837 $0.026 10s
+case_19 run 1: normal/unknown/[] tools 6 in 23820 out 862 $0.028 10s
+case_20 run 1: fault/compressor/recycle/[20, 15, 3] tools 6 in 34188 out 865 $0.043 10s
+case_21 run 1: fault/condenser/separator/[12, 5, 15] tools 6 in 27658 out 829 $0.033 9s
+case_22 run 1: normal/unknown/[] tools 6 in 22537 out 1112 $0.028 11s
+case_23 run 1: fault/feeds/[6] tools 6 in 23362 out 638 $0.024 8s
+case_24 run 1: normal/unknown/[] tools 6 in 23885 out 907 $0.030 10s
+case_25 run 1: fault/condenser/separator/[12, 5, 15] tools 6 in 27177 out 868 $0.033 10s
+case_26 run 1: fault/reactor/[14, 11, 4] tools 6 in 23765 out 1086 $0.030 11s
+case_27 run 1: normal/unknown/[] tools 6 in 25117 out 1154 $0.034 12s
+case_28 run 1: fault/feeds/[8, 13] tools 6 in 24768 out 736 $0.027 9s
+case_29 run 1: normal/unknown/[] tools 6 in 23182 out 1173 $0.031 13s
+case_30 run 1: fault/compressor/recycle/[19, 15, 9] tools 9 in 47306 out 1571 $0.049 17s
+case_31 run 1: fault/feeds/[18, 12, 5] tools 6 in 24808 out 1118 $0.034 12s
+case_32 run 1: fault/reactor/[13, 12, 18] tools 6 in 23960 out 917 $0.029 10s
+case_33 run 1: fault/condenser/separator/[5, 12] tools 6 in 26386 out 969 $0.034 11s
+case_34 run 1: fault/stripper/[16, 10, 9] tools 6 in 28261 out 816 $0.034 9s
+case_35 run 1: normal/unknown/[] tools 6 in 25111 out 892 $0.033 10s
+case_36 run 1: fault/feeds/[7, 1, 6] tools 5 in 15839 out 500 $0.019 7s
+case_37 run 1: fault/reactor/[17, 3, 11] tools 5 in 20024 out 689 $0.030 8s
+case_38 run 1: fault/compressor/recycle/[20, 15, 9] tools 6 in 36358 out 838 $0.046 10s
+case_39 run 1: fault/condenser/separator/[12, 5, 15] tools 6 in 24995 out 795 $0.028 9s
+case_40 run 1: normal/unknown/[] tools 5 in 15247 out 733 $0.020 9s
+case_41 run 1: normal/unknown/[] tools 6 in 24703 out 935 $0.032 10s
+case_42 run 1: normal/unknown/[] tools 6 in 23417 out 849 $0.027 10s
+case_43 run 1: normal/unknown/[] tools 6 in 23282 out 996 $0.028 12s
+case_44 run 1: fault/feeds/[7, 6, 1] tools 6 in 23252 out 708 $0.024 9s
+case_45 run 1: normal/unknown/[] tools 6 in 23230 out 913 $0.028 10s
+case_46 run 1: fault/reactor/[4, 11, 14] tools 6 in 30470 out 832 $0.038 10s
+case_47 run 1: fault/feeds/[10, 9, 15] tools 5 in 20224 out 731 $0.031 8s
+case_48 run 1: normal/unknown/[] tools 7 in 27054 out 901 $0.036 10s
+case_49 run 1: fault/feeds/[6] tools 6 in 23230 out 932 $0.026 10s
+case_50 run 1: fault/reactor/[4, 11] tools 6 in 30066 out 757 $0.036 9s
+case_51 run 1: fault/compressor/recycle/[20, 15, 3] tools 6 in 34864 out 824 $0.044 10s
+case_52 run 1: normal/unknown/[] tools 7 in 23848 out 1383 $0.034 14s
+case_53 run 1: fault/condenser/separator/[5, 12, 15] tools 6 in 26174 out 885 $0.031 10s
+case_54 run 1: fault/feeds/[1, 8, 7] tools 6 in 23596 out 716 $0.025 9s
+case_55 run 1: fault/reactor/[4, 11, 14] tools 6 in 31580 out 850 $0.039 10s
+case_56 run 1: normal/unknown/[] tools 6 in 22963 out 1031 $0.028 11s
+case_57 run 1: fault/feeds/[8, 13, 3] tools 5 in 16594 out 670 $0.023 7s
+case_58 run 1: fault/reactor/[11, 14, 4] tools 7 in 46216 out 989 $0.064 10s
+case_59 run 1: fault/feeds/[8, 1, 10] tools 5 in 15850 out 617 $0.020 7s
+case_60 run 1: fault/reactor/[14, 11] tools 6 in 23614 out 695 $0.025 9s
+case_61 run 1: fault/reactor/[17, 3, 9] tools 5 in 18794 out 690 $0.027 8s
+case_62 run 1: fault/feeds/[6] tools 6 in 23291 out 617 $0.023 8s
+case_63 run 1: fault/feeds/[2, 8, 13] tools 5 in 15861 out 652 $0.021 8s
+case_64 run 1: fault/reactor/[11, 4, 14] tools 6 in 47390 out 808 $0.060 10s
+case_65 run 1: fault/reactor/[17, 14, 4] tools 5 in 19802 out 768 $0.030 9s
+case_66 run 1: fault/feeds/[1] tools 6 in 23560 out 709 $0.025 9s
+case_67 run 1: fault/feeds/[2] tools 5 in 15859 out 617 $0.021 8s
+case_68 run 1: fault/condenser/separator/[5, 12] tools 6 in 26220 out 934 $0.033 10s
+case_69 run 1: fault/feeds/[18, 16, 12] tools 6 in 23905 out 947 $0.029 11s
+case_70 run 1: fault/reactor/[11, 4] tools 4 in 30598 out 675 $0.049 9s
+session cost this run: $2.27
+runtime 1013.8 s, peak RAM 0.14 GB

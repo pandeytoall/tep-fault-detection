@@ -1,0 +1,13 @@
+metric,v1_k,v1_n,v1.1_k,v1.1_n,wrong_to_right,right_to_wrong,machine
+headline,27,36,36,36,9.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+idv_top1_all,25,60,51,60,26.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+idv_top3_all,35,60,51,60,16.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+idv_top1_1to15,24,45,36,45,12.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+idv_top3_1to15,29,45,36,45,7.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+normal,10,10,10,10,0.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+hard,9,9,9,9,0.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+unknown_status,12,15,15,15,3.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+baseline,15,36,15,36,,,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+chance,18,36,18,36,,,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+headline | classify_fault used,27,36,36,36,9.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"
+headline | classify_fault not used,0,0,0,0,0.0,0.0,"laptop, Intel i5-1135G7, 7.7 GB RAM"

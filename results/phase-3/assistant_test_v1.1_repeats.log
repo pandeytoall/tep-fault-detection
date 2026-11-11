@@ -1,0 +1,23 @@
+20 sessions to run for 10 cases (test, v1.1); prompt 93ef53d4a0c9
+case_06 run 2: fault/feeds/[7, 6, 1] tools 5 in 15839 out 450 $0.019 6s
+case_06 run 3: fault/feeds/[7, 6, 4] tools 5 in 15480 out 712 $0.019 9s
+case_07 run 2: fault/stripper/[16, 10] tools 6 in 31492 out 865 $0.039 10s
+case_07 run 3: fault/stripper/[16, 10] tools 6 in 32184 out 955 $0.043 10s
+case_14 run 2: normal/unknown/[] tools 6 in 22927 out 943 $0.027 11s
+case_14 run 3: normal/unknown/[] tools 6 in 23264 out 939 $0.029 10s
+case_29 run 2: normal/unknown/[] tools 6 in 23666 out 852 $0.027 10s
+case_29 run 3: normal/unknown/[] tools 6 in 22741 out 1105 $0.028 12s
+case_42 run 2: normal/unknown/[] tools 6 in 24891 out 1058 $0.032 11s
+case_42 run 3: normal/unknown/[] tools 6 in 22927 out 1134 $0.029 12s
+case_48 run 2: normal/unknown/[] tools 8 in 27403 out 1089 $0.039 11s
+case_48 run 3: normal/unknown/[] tools 7 in 26621 out 1045 $0.038 11s
+case_57 run 2: fault/feeds/[8, 13] tools 5 in 16598 out 599 $0.022 7s
+case_57 run 3: fault/feeds/[8, 3, 9] tools 6 in 25436 out 901 $0.032 10s
+case_65 run 2: fault/reactor/[17, 11, 4] tools 6 in 29426 out 1206 $0.038 12s
+case_65 run 3: fault/reactor/[17, 14, 11] tools 6 in 29759 out 918 $0.037 10s
+case_67 run 2: fault/feeds/[2] tools 5 in 15894 out 568 $0.019 8s
+case_67 run 3: fault/feeds/[2] tools 6 in 23959 out 903 $0.029 10s
+case_68 run 2: fault/condenser/separator/[5, 12] tools 6 in 26236 out 839 $0.032 10s
+case_68 run 3: fault/condenser/separator/[5, 12] tools 6 in 26253 out 946 $0.033 10s
+session cost this run: $0.61
+runtime 287.2 s, peak RAM 0.14 GB
