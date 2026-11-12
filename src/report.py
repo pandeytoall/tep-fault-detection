@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from src.data import HOURS_PER_SAMPLE
 from src.evaluate import HARD_FAULTS
 
 DEFAULT_LIMIT = "1%"
@@ -385,3 +386,44 @@ def load_inputs(root):
         "cost_v11": session_cost(results / "phase-2b" / "transcripts_test_v1.1"),
         "pca": PCAMonitor.load(results / "phase-2" / "pca.npz"), "dpca": PCAMonitor.load(results / "phase-2" / "dpca.npz"),
     }
+
+
+# --- the pressure-limit tail --------------------------------------------------------------------------------------------
+PRESSURE_TAG = "xmeas_7"          # reactor pressure, kPa gauge
+PRESSURE_LEVEL_KPA = 2990.0       # close to 3000, where the readings sit flat in the fault 6 run; the cause is not verified here
+
+
+def pressure_limit_table(frame, onset, threshold=PRESSURE_LEVEL_KPA, tag=PRESSURE_TAG):
+    """Per fault: runs, share of runs whose `tag` reaches `threshold` after the onset, and the median first sample (and hours
+    after the onset) over the runs that do. `frame` has faultNumber, simulationRun, sample and the tag."""
+    post = frame[frame["sample"] > onset]
+    hit = post[post[tag] >= threshold].groupby(["faultNumber", "simulationRun"])["sample"].min()
+    runs = frame.groupby("faultNumber")["simulationRun"].nunique()
+    first = hit.groupby(level=0).median().reindex(runs.index)
+    n_hit = hit.groupby(level=0).size().reindex(runs.index).fillna(0)
+    out = pd.DataFrame({"n_runs": runs, "share_reached": n_hit / runs, "median_first_sample": first})
+    out["median_first_hours_after_onset"] = (out["median_first_sample"] - onset) * HOURS_PER_SAMPLE
+    out.index.name = "fault"
+    return out
+
+
+def window_comparison(blame, pressure, method="spe", affected_share=0.5):
+    """(table, summary): SPE top-5 hit in the first-hour and whole post-onset windows for the detectable faults, with the share of
+    runs whose reactor pressure reaches the level after the onset (`pressure` from pressure_limit_table). Faults with a share at
+    or above `affected_share` are 'affected'; summary holds the window means with and without them."""
+    rows = _detectable(blame)
+    rows = rows[rows["method"] == method]
+    first = _detectable(blame, "first_hour")
+    first = first[first["method"] == method].set_index("fault")["top5_hit"]
+    whole = rows.set_index("fault")["top5_hit"]
+    faults = sorted(whole.index)
+    share = pressure["share_reached"].reindex(faults)
+    affected = [int(f) for f in faults if share[f] >= affected_share]
+    keep = [f for f in faults if f not in affected]
+    lines = [{"Fault": str(f), "Top-5 hit, first hour": f"{first[f]:.2f}", "Top-5 hit, whole window": f"{whole[f]:.2f}",
+              "Runs reaching 2990 kPa": fmt_share(share[f])} for f in faults]
+    lines.append({"Fault": f"Mean, {len(faults)} faults", "Top-5 hit, first hour": f"{first[faults].mean():.2f}",
+                  "Top-5 hit, whole window": f"{whole[faults].mean():.2f}", "Runs reaching 2990 kPa": ""})
+    summary = {"mean_first_hour": float(first[faults].mean()), "mean_whole": float(whole[faults].mean()), "affected": affected,
+               "mean_first_hour_without_affected": float(first[keep].mean()), "mean_whole_without_affected": float(whole[keep].mean())}
+    return pd.DataFrame(lines), summary

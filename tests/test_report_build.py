@@ -71,3 +71,19 @@ def test_operator_report_has_the_asked_sections_and_a_how_made_line():
                     "## Evidence", "## How this was made"):
         assert heading in text
     assert "peak RAM" in text.split("## How this was made")[1] and "laptop" in text.split("## How this was made")[1]
+
+
+@built
+def test_operator_report_states_the_shutdown_tail_with_its_hedge():
+    text = (OUT / "operator-fault6.md").read_text(encoding="utf8")
+    why = text.split("Why they differ:")[1].split("\n")[0]
+    assert "main reason is the shutdown tail" in why and "not verified here" in why
+    assert "shutdown limit" in text
+
+
+@built
+def test_pressure_table_file_lists_the_affected_faults():
+    import pandas as pd
+    table = pd.read_csv(OUT / "pressure_tail.csv", index_col="fault")
+    assert len(table) == 20 and table.loc[6, "share_reached"] == 1.0
+    assert set(table.index[table["share_reached"] > 0]) == {6, 12, 13, 18}

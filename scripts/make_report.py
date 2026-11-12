@@ -106,6 +106,12 @@ def plot_readings(facts, path):
     style.finish_figure(fig, ax, title, path, title_size=13)
 
 
+def pressure_table(run_ids):
+    """Reactor pressure vs the shutdown-like level, per fault, over the fixed testing runs (one fault at a time: low memory)."""
+    parts = [data.load_runs(TESTING, run_ids, faults=[f])[["faultNumber", "simulationRun", "sample", report.PRESSURE_TAG]] for f in range(1, 21)]
+    return report.pressure_limit_table(pd.concat(parts, ignore_index=True), ONSET)
+
+
 # --- the pass ---------------------------------------------------------------------------------------------------------------------
 def main():
     t0 = time.perf_counter()
@@ -118,8 +124,12 @@ def main():
     monitor = inp["pca"]
     assert monitor.lags == 0, monitor.lags
     reference = contributions.load_reference(data.PCA_MODEL)
+    OUT.mkdir(parents=True, exist_ok=True)
+    inp["pressure"] = pressure_table(inp["test_runs"]["run_ids"])
+    inp["pressure"].round(4).to_csv(OUT / "pressure_tail.csv")
     facts = operator_report.compute_facts(frame, monitor, reference, run_id, FAULT, ONSET, top, inp["test_blame"], inp["scorecard"])
     del frame
+    facts["pressure"] = inp["pressure"].loc[FAULT].to_dict()
 
     FIGURES.mkdir(parents=True, exist_ok=True)
     plot_run(facts, FIGURES / "operator-fault6.png")

@@ -6,6 +6,7 @@ Style: short sentences, a one-line meaning for each term, and the caveat that be
 import pandas as pd
 
 from src import report
+from src.operator_report import SHUTDOWN
 from src.report import fmt_fdr, fmt_gb, fmt_seconds, fmt_share, md_table
 
 FIGURES = "figures/detection-by-family.png"
@@ -22,12 +23,13 @@ FAULT_NAMES = {1: "A/C feed ratio step", 2: "B composition step", 4: "reactor co
 
 # the caveat that must sit inside each section (not only in the closing list): section heading prefix -> phrases
 CAVEATS = {
-    "What this is": ["one seed-42 split", "tuned with all 20 faults", "36 headline cases", "may remember"],
+    "What this is": ["one seed-42 split", "tuned with all 20 faults", "36 headline cases", "may remember", "shutdown limit", "first-hour numbers are the fairer view"],
     "Data and rules": ["Rieth", "one seed-42 split"],
     "Detection": ["every 3rd row", "false-alarm streaks", "one seed-42 split", "grid fits are degenerate"],
     "Against the literature": ["one run per fault", "Rieth"],
     "The unseen-fault test": ["tuned with all 20 faults", "every 3rd row", "one seed-42 split"],
-    "Diagnosis": ["every 5th", "one dev vector per fault", "mean shift", "14 and 19"],
+    "Diagnosis": ["every 5th", "one dev vector per fault", "mean shift", "14 and 19", "shutdown limit", "pressure tail", "first hour"],
+    "What we did not do": ["shutdown limit", "pressure tail"],
     "The assistant": ["36 headline cases", "may remember", "all 90", "not a detection"],
 }
 
@@ -67,6 +69,7 @@ def findings(inp):
     us = report.unseen_summary(inp["unseen"])
     blame = report.blame_summary(inp["test_blame"], inp["dev_blame"]).set_index("method")
     contrast = report.window_contrast(inp["test_blame"], fault=6)
+    _, wc = report.window_comparison(inp["test_blame"], inp["pressure"])
     cmp = inp["assistant_cmp"].set_index("metric")
     k1, n1, k11, n11 = (int(cmp.loc["headline", c]) for c in ("v1_k", "v1_n", "v1.1_k", "v1.1_n"))
     lo1, hi1 = _wilson(k1, n1)
@@ -89,9 +92,11 @@ def findings(inp):
          f"Fault 16 carries {fmt_share(us['carrier_share'])} of that gap; on the other four the two are within {_f(us['max_gap_others'])}. "
          f"The model's settings were tuned with all 20 faults, including these five, so the unseen-fault result is mildly optimistic."),
         (f"**Contribution plots point at symptoms, not causes.** SPE's top five readings include the faulted plant area in "
-         f"{fmt_share(blame.loc['spe', 'top5_hit'])} of runs, random picking in {fmt_share(blame.loc['spe', 'random_top5'])}; T² is no better than random. "
+         f"{fmt_share(wc['mean_whole'])} of runs over the whole post-onset window and {fmt_share(wc['mean_first_hour'])} in the first hour, random picking in "
+         f"{fmt_share(blame.loc['spe', 'random_top5'])}; T² is no better than random. "
          f"For fault 6 (A feed loss) a feed reading (the A feed or its valve) is the top SPE reading in {fmt_share(contrast['first_hour_top1'])} of runs in the first hour "
-         f"and {fmt_share(contrast['post_top1'])} over the whole window, because downstream readings take over as the plant reacts."),
+         f"and {fmt_share(contrast['post_top1'])} over the whole window. Most of that whole window comes after reactor pressure reaches about 3000 kPa, "
+         f"{SHUTDOWN}, so the first-hour numbers are the fairer view and whole-window blame can be inflated by that tail."),
         (f"**The assistant scored higher with a trained classifier, which does not show better reasoning.** On the frozen cases it named the right plant "
          f"area in {k1} of {n1} fault cases as v1 (95% interval {_f(lo1, 2)} to {_f(hi1, 2)}) and {k11} of {n11} as v1.1 ({_f(lo11, 2)} to {_f(hi11, 2)}). "
          f"v1.1 adds a supervised classifier trained on faults 1-20, and all {n_v11} v1.1 sessions used it, so the gain is \"a trained classifier helps\" "
@@ -294,6 +299,12 @@ def section_diagnosis(inp):
     hidden = inp["test_hidden"].set_index("fault")
     ctrl = hidden.loc[0]
     hard = list(report.HARD_FAULTS)
+    pressure = inp["pressure"]
+    p6 = pressure.loc[6]
+    reached = pressure[pressure["share_reached"] > 0]
+    pressure_view = pd.DataFrame([{"Fault": str(f), "Runs reaching 2990 kPa": fmt_share(r.share_reached), "Median first sample": f"{r.median_first_sample:.0f}",
+                                   "Hours after the onset": f"{r.median_first_hours_after_onset:.1f}"} for f, r in reached.iterrows()])
+    window_view, wc = report.window_comparison(tb, pressure)
     like = [f for f in report.looks_like_control(inp["test_hidden"]) if f not in hard]
     spread = hidden.loc[hard, "median_max_spread_ratio"]
     dacf = hidden.loc[hard, "median_max_abs_dacf"]
@@ -305,7 +316,7 @@ def section_diagnosis(inp):
 
 **What blame is.** An alarm says something is wrong; blame says which readings the alarm statistic points at. For each reading we take its contribution to SPE (or T²) over a window and divide it by what it contributes on normal runs. About 1 is normal; a high value marks a reading to look at. It shows where the symptoms are, not where the cause is, because contributions smear across correlated readings. We score it as *top-5 hit*: a top-5 reading sits in the plant area the fault belongs to (a fixed fault-to-area map), next to what random picking scores.
 
-**Which method blames the right area.** Means over the {n_faults} detectable faults that have a known area ({', '.join(map(str, report.detectable_faults(inp['test_blame'])))}), whole post-onset window:
+**Which method blames the right area.** Means over the {n_faults} detectable faults that have a known area ({', '.join(map(str, report.detectable_faults(inp['test_blame'])))}), whole post-onset window (these whole-window numbers can be inflated by the pressure tail described below; first-hour numbers follow it):
 
 {md_table(blame_table(summary))}
 
@@ -318,7 +329,19 @@ def section_diagnosis(inp):
 
 _Footnote: the permutation-importance dots are dev runs, one importance vector per fault (each is 0 or 1); the PCA dots are testing runs. The chart title says "test runs" for the PCA views only._
 
-**The fault 6 lesson: first hour against whole window.** For fault 6 (A feed loss) the top SPE reading is a feed reading in {fmt_share(contrast['first_hour_top1'])} of the 100 testing runs in the first hour after the onset (the median top three are {_top3(tb, 6, 'first_hour')}), and in {fmt_share(contrast['post_top1'])} over the whole post-onset window (median top three: {_top3(tb, 6)}). The A feed is lost at once; later the plant reacts, and downstream readings dominate a whole-window average. Both windows have a feed reading among the top five in {fmt_share(contrast['post_top5'])} of runs. The window, not the method, decides what the plot says. [The operator report](operator-fault6.md) shows this on one run.
+**The pressure tail: why whole-window blame can mislead.** In some faults reactor pressure (xmeas_7) climbs to about 3000 kPa gauge after the onset and the readings then sit flat. In fault 6 run 1 (see [the operator report](operator-fault6.md)) 24 of 52 readings stop changing from 13.8 h on. 3000 kPa is {SHUTDOWN}, so this is probably the simulator's pressure shutdown regime, but we have not checked the cause. A whole-window average then mostly measures that frozen stretch. Share of the 100 testing runs per fault whose reactor pressure reaches 2990 kPa or more after the onset, and the median first sample (onset at sample 160):
+
+{md_table(pressure_view)}
+
+The other {20 - len(reached)} faults have no run that reaches it. Among the 12 detectable faults only fault 6 is affected in most runs, faults 12 and 13 in a minority, and fault 18 has no expected area, so it is not in the blame means. SPE top-5 hit, first hour beside whole window, for the 12 detectable faults:
+
+{md_table(window_view)}
+
+- Over all 12 faults the means are {_f(wc['mean_first_hour'], 2)} (first hour) and {_f(wc['mean_whole'], 2)} (whole window), against {_f(spe['random_top5'], 2)} for random picking, so the lead over random does not depend on the window. Without fault 6 the means are {_f(wc['mean_first_hour_without_affected'], 2)} and {_f(wc['mean_whole_without_affected'], 2)}.
+- Top-1 hit, the share of blame in the faulted area, and the heatmap below (median whole-window contribution) are more exposed to the tail than top-5 hit. Treat their whole-window values for fault 6 (and fault 18) as inflated by it.
+- The window gap also goes both ways without the tail: fault 1 scores better over the whole window, faults 2, 8 and 10 worse, and none of them reaches the pressure level. We do not explain that here.
+
+**The fault 6 lesson: first hour against whole window.** For fault 6 (A feed loss) the top SPE reading is a feed reading in {fmt_share(contrast['first_hour_top1'])} of the 100 testing runs in the first hour after the onset (the median top three are {_top3(tb, 6, 'first_hour')}), and in {fmt_share(contrast['post_top1'])} over the whole post-onset window (median top three: {_top3(tb, 6)}). The main reason the two differ is the pressure tail: reactor pressure reaches the level in {fmt_share(p6['share_reached'])} of the fault 6 runs, at a median of sample {p6['median_first_sample']:.0f} ({p6['median_first_hours_after_onset']:.1f} h after the onset), so most of the 800 post-onset samples come after it. Downstream readings also move before that point, so "the symptoms spread downstream" is part of the story, not all of it. Both windows have a feed reading among the top five in {fmt_share(contrast['post_top5'])} of runs. The window, not the method, decides what the plot says.
 
 **Where blame misses.** SPE's top-5 hit rate is at or below 0.05 on faults {', '.join(map(str, misses))}:
 
@@ -335,9 +358,9 @@ These are results about contribution plots (symptoms, not causes), not a fault i
 
 ![Largest change in any reading per fault](../phase-4/figures/hidden-faults.png)
 
-See also [the blame heatmap](../phase-4/figures/blame-heatmap.png).
+See also [the blame heatmap](../phase-4/figures/blame-heatmap.png) (median whole-window contribution; the fault 6 and fault 18 rows are inflated by the pressure tail).
 
-{src('phase-4/test_blame.csv', 'phase-4/dev_blame.csv', 'phase-4/test_hidden.csv', 'phase-4/README.md')}
+{src('phase-4/test_blame.csv', 'phase-4/dev_blame.csv', 'phase-4/test_hidden.csv', 'phase-4/README.md')} Pressure table: [`pressure_tail.csv`](pressure_tail.csv), computed from the 100 fixed testing runs of each fault.
 """
 
 
@@ -391,6 +414,7 @@ def section_limits(inp):
 - **Rieth data, not Braatz data.** Most papers use the original Braatz data (one run per fault). Same faults, different noise and run counts, so compare patterns, not exact percentages.
 - **Gradient boosting stride.** Fitted on every 3rd row (stride {stride}) to keep the grid short. {degenerate} of {len(tuning)} grid fits are degenerate (limit saturates at 1.0) and discarded by the rule. It was tuned with all 20 faults, so the unseen-fault test is mildly optimistic.
 - **Few assistant cases.** 36 headline cases give wide intervals (v1: {_f(lo, 2)} to {_f(hi, 2)}). Claude may remember the TEP papers. v1.1 includes a supervised classifier.
+- **Pressure tail.** Whole-window blame for fault 6 is dominated by samples after reactor pressure reaches about 3000 kPa ({SHUTDOWN}); first-hour numbers are the fairer view. Faults 12, 13 and 18 reach it too (see the Diagnosis section).
 - **Permutation importance.** One dev vector per fault, every 5th post-onset sample, one process; the pass took about {perm_h:.0f} hours, over the guide, and was not rerun.
 - **False-alarm streaks.** DPCA T² has a 3-in-a-row rate of {fmt_share(rows['dpca-t2']['sustained_rate'])} on fault-free runs at the 1% limit, so its delays are less trustworthy.
 - **Hidden-fault check.** Its headline is mean shift, which does not separate faults 14 and 19 from the control; spread and autocorrelation do.
@@ -426,12 +450,13 @@ Run from the project folder, in this order. Python is the project venv.
 def readme_text():
     return """# Phase 5: reports
 
-Three files, all generated by one script from saved results files. Do not edit them by hand.
+Four files and a folder, all generated by one script from saved results files. Do not edit them by hand.
 
 | File | What it is |
 |---|---|
 | `report.md` | The comparison report: findings, data and rules, detection, literature, unseen-fault test, diagnosis, the assistant, limits, reproduce. |
 | `operator-fault6.md` | An operator-style shift handover for one fault 6 (A feed loss) testing run: the first run ID in `phase-4/test_runs.json`. |
+| `pressure_tail.csv` | Per fault: share of the 100 fixed testing runs whose reactor pressure reaches 2990 kPa after the onset, and the median first sample. |
 | `figures/` | `detection-by-family.png`, `operator-fault6.png`, `operator-fault6-readings.png`. The report also links the figures of phases 2-4 where they already say it. |
 
 ## Rebuild
@@ -451,7 +476,7 @@ One command. It overwrites this folder, and records runtime, peak RAM and machin
 | Detection | `scorecard.csv`, `phase-3/hgb_tuning.csv`, `phase-3/models.json`; `research/pca-anchors.md` for one published mean |
 | Against the literature | `phase-2/vs_literature.csv`, `scorecard.csv`, `phase-2/pca.npz`, `phase-2/dpca.npz` |
 | The unseen-fault test | `phase-3/unseen_fault.csv` |
-| Diagnosis | `phase-4/test_blame.csv`, `phase-4/dev_blame.csv`, `phase-4/test_hidden.csv` |
+| Diagnosis | `phase-4/test_blame.csv`, `phase-4/dev_blame.csv`, `phase-4/test_hidden.csv`, `report/pressure_tail.csv` (from the testing parquet) |
 | The assistant | `phase-3/assistant_v1_vs_v1.1.csv`, `phase-2b/diagnosis_test.csv`, `phase-2b/diagnosis_test_v1.1.csv`, `phase-2b/transcripts_test*/` (cost; local, not in git) |
 | What we did not do | `phase-3/hgb_tuning.csv`, `phase-4/dev_blame.csv`, `phase-3/assistant_v1_vs_v1.1.csv`, `scorecard.csv` |
 | operator-fault6.md | `phase-4/test_runs.json`, `phase-4/top_readings_6.csv`, `phase-4/test_blame.csv`, `scorecard.csv`, `phase-2/pca.npz`, the fault 6 testing run |

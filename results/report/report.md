@@ -7,7 +7,7 @@ We compared fault-detection models on the public Tennessee Eastman Process (TEP)
 - **Detection at a 1% false-alarm limit.** The unsupervised models (they learn from normal runs only) flag 0.439 to 0.769 of post-onset samples on average without faults 3, 9, 15; Autoencoder L=2 is highest (0.769) and PCA SPE, the reference, reaches 0.737. Gradient boosting, the supervised model (it also learns from labelled faults), reaches 0.951. The two tracks have separate tables and are not ranked against each other. The top four unsupervised models sit within 0.032 of each other on one seed-42 split, so we call no winner among them.
 - **Faults 3, 9 and 15 are not detected by any model.** Every model flags at most 0.021 of their post-onset samples, against a false-alarm rate of 0.009 to 0.012. Inside one run the readings after the fault start look like the readings before it, exactly as a fault-free run does. This is a result about these data, and the three faults sit at the false-alarm floor, as the literature reports.
 - **Not seeing a fault costs the supervised model most on fault 16.** Retrained without faults 1, 8, 13, 14 and 16, it flags 0.863 of samples on those five, against 0.806 for PCA SPE, which uses no labels. Fault 16 carries 90% of that gap; on the other four the two are within 0.031. The model's settings were tuned with all 20 faults, including these five, so the unseen-fault result is mildly optimistic.
-- **Contribution plots point at symptoms, not causes.** SPE's top five readings include the faulted plant area in 75% of runs, random picking in 61%; T² is no better than random. For fault 6 (A feed loss) a feed reading (the A feed or its valve) is the top SPE reading in 100% of runs in the first hour and 22% over the whole window, because downstream readings take over as the plant reacts.
+- **Contribution plots point at symptoms, not causes.** SPE's top five readings include the faulted plant area in 75% of runs over the whole post-onset window and 77% in the first hour, random picking in 61%; T² is no better than random. For fault 6 (A feed loss) a feed reading (the A feed or its valve) is the top SPE reading in 100% of runs in the first hour and 22% over the whole window. Most of that whole window comes after reactor pressure reaches about 3000 kPa, close to the plant's published shutdown limit (not verified here), so the first-hour numbers are the fairer view and whole-window blame can be inflated by that tail.
 - **The assistant scored higher with a trained classifier, which does not show better reasoning.** On the frozen cases it named the right plant area in 27 of 36 fault cases as v1 (95% interval 0.59 to 0.86) and 36 of 36 as v1.1 (0.90 to 1.00). v1.1 adds a supervised classifier trained on faults 1-20, and all 90 v1.1 sessions used it, so the gain is "a trained classifier helps" and the two cannot be separated. With only 36 headline cases the intervals are wide, and Claude may remember the published TEP papers. Answering 'normal' or 'can't tell' on faults 3, 9, 15 (9 of 9) is not a detection.
 
 ## Data and rules
@@ -186,7 +186,7 @@ _Source: [`phase-3/unseen_fault.csv`](../phase-3/unseen_fault.csv), [`scorecard.
 
 **What blame is.** An alarm says something is wrong; blame says which readings the alarm statistic points at. For each reading we take its contribution to SPE (or T²) over a window and divide it by what it contributes on normal runs. About 1 is normal; a high value marks a reading to look at. It shows where the symptoms are, not where the cause is, because contributions smear across correlated readings. We score it as *top-5 hit*: a top-5 reading sits in the plant area the fault belongs to (a fixed fault-to-area map), next to what random picking scores.
 
-**Which method blames the right area.** Means over the 12 detectable faults that have a known area (1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14), whole post-onset window:
+**Which method blames the right area.** Means over the 12 detectable faults that have a known area (1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14), whole post-onset window (these whole-window numbers can be inflated by the pressure tail described below; first-hour numbers follow it):
 
 | Method | Top reading in faulted area | Top-5 includes faulted area | Share of blame in faulted area |
 |---|---|---|---|
@@ -206,7 +206,38 @@ _Source: [`phase-3/unseen_fault.csv`](../phase-3/unseen_fault.csv), [`scorecard.
 
 _Footnote: the permutation-importance dots are dev runs, one importance vector per fault (each is 0 or 1); the PCA dots are testing runs. The chart title says "test runs" for the PCA views only._
 
-**The fault 6 lesson: first hour against whole window.** For fault 6 (A feed loss) the top SPE reading is a feed reading in 100% of the 100 testing runs in the first hour after the onset (the median top three are A feed flow (xmv_3); A feed (xmeas_1); Compressor work (xmeas_20)), and in 22% over the whole post-onset window (median top three: Condenser cooling water flow (xmv_11); Stripper underflow (xmeas_17); A feed (xmeas_1)). The A feed is lost at once; later the plant reacts, and downstream readings dominate a whole-window average. Both windows have a feed reading among the top five in 100% of runs. The window, not the method, decides what the plot says. [The operator report](operator-fault6.md) shows this on one run.
+**The pressure tail: why whole-window blame can mislead.** In some faults reactor pressure (xmeas_7) climbs to about 3000 kPa gauge after the onset and the readings then sit flat. In fault 6 run 1 (see [the operator report](operator-fault6.md)) 24 of 52 readings stop changing from 13.8 h on. 3000 kPa is close to the plant's published shutdown limit (not verified here), so this is probably the simulator's pressure shutdown regime, but we have not checked the cause. A whole-window average then mostly measures that frozen stretch. Share of the 100 testing runs per fault whose reactor pressure reaches 2990 kPa or more after the onset, and the median first sample (onset at sample 160):
+
+| Fault | Runs reaching 2990 kPa | Median first sample | Hours after the onset |
+|---|---|---|---|
+| 6 | 100% | 277 | 5.9 |
+| 12 | 13% | 637 | 23.9 |
+| 13 | 9% | 625 | 23.2 |
+| 18 | 96% | 433 | 13.7 |
+
+The other 16 faults have no run that reaches it. Among the 12 detectable faults only fault 6 is affected in most runs, faults 12 and 13 in a minority, and fault 18 has no expected area, so it is not in the blame means. SPE top-5 hit, first hour beside whole window, for the 12 detectable faults:
+
+| Fault | Top-5 hit, first hour | Top-5 hit, whole window | Runs reaching 2990 kPa |
+|---|---|---|---|
+| 1 | 0.39 | 1.00 | 0% |
+| 2 | 0.18 | 0.00 | 0% |
+| 4 | 1.00 | 1.00 | 0% |
+| 5 | 1.00 | 1.00 | 0% |
+| 6 | 1.00 | 1.00 | 100% |
+| 7 | 1.00 | 1.00 | 0% |
+| 8 | 0.39 | 0.05 | 0% |
+| 10 | 0.48 | 0.00 | 0% |
+| 11 | 1.00 | 1.00 | 0% |
+| 12 | 0.98 | 0.96 | 13% |
+| 13 | 0.85 | 0.97 | 9% |
+| 14 | 1.00 | 1.00 | 0% |
+| Mean, 12 faults | 0.77 | 0.75 |  |
+
+- Over all 12 faults the means are 0.77 (first hour) and 0.75 (whole window), against 0.61 for random picking, so the lead over random does not depend on the window. Without fault 6 the means are 0.75 and 0.73.
+- Top-1 hit, the share of blame in the faulted area, and the heatmap below (median whole-window contribution) are more exposed to the tail than top-5 hit. Treat their whole-window values for fault 6 (and fault 18) as inflated by it.
+- The window gap also goes both ways without the tail: fault 1 scores better over the whole window, faults 2, 8 and 10 worse, and none of them reaches the pressure level. We do not explain that here.
+
+**The fault 6 lesson: first hour against whole window.** For fault 6 (A feed loss) the top SPE reading is a feed reading in 100% of the 100 testing runs in the first hour after the onset (the median top three are A feed flow (xmv_3); A feed (xmeas_1); Compressor work (xmeas_20)), and in 22% over the whole post-onset window (median top three: Condenser cooling water flow (xmv_11); Stripper underflow (xmeas_17); A feed (xmeas_1)). The main reason the two differ is the pressure tail: reactor pressure reaches the level in 100% of the fault 6 runs, at a median of sample 277 (5.9 h after the onset), so most of the 800 post-onset samples come after it. Downstream readings also move before that point, so "the symptoms spread downstream" is part of the story, not all of it. Both windows have a feed reading among the top five in 100% of runs. The window, not the method, decides what the plot says.
 
 **Where blame misses.** SPE's top-5 hit rate is at or below 0.05 on faults 2, 8, 10:
 
@@ -232,9 +263,9 @@ These are results about contribution plots (symptoms, not causes), not a fault i
 
 ![Largest change in any reading per fault](../phase-4/figures/hidden-faults.png)
 
-See also [the blame heatmap](../phase-4/figures/blame-heatmap.png).
+See also [the blame heatmap](../phase-4/figures/blame-heatmap.png) (median whole-window contribution; the fault 6 and fault 18 rows are inflated by the pressure tail).
 
-_Source: [`phase-4/test_blame.csv`](../phase-4/test_blame.csv), [`phase-4/dev_blame.csv`](../phase-4/dev_blame.csv), [`phase-4/test_hidden.csv`](../phase-4/test_hidden.csv), [`phase-4/README.md`](../phase-4/README.md)._
+_Source: [`phase-4/test_blame.csv`](../phase-4/test_blame.csv), [`phase-4/dev_blame.csv`](../phase-4/dev_blame.csv), [`phase-4/test_hidden.csv`](../phase-4/test_hidden.csv), [`phase-4/README.md`](../phase-4/README.md)._ Pressure table: [`pressure_tail.csv`](pressure_tail.csv), computed from the 100 fixed testing runs of each fault.
 
 ## The assistant
 
@@ -266,6 +297,7 @@ _Source: [`phase-3/assistant_v1_vs_v1.1.csv`](../phase-3/assistant_v1_vs_v1.1.cs
 - **Rieth data, not Braatz data.** Most papers use the original Braatz data (one run per fault). Same faults, different noise and run counts, so compare patterns, not exact percentages.
 - **Gradient boosting stride.** Fitted on every 3rd row (stride 3) to keep the grid short. 2 of 8 grid fits are degenerate (limit saturates at 1.0) and discarded by the rule. It was tuned with all 20 faults, so the unseen-fault test is mildly optimistic.
 - **Few assistant cases.** 36 headline cases give wide intervals (v1: 0.59 to 0.86). Claude may remember the TEP papers. v1.1 includes a supervised classifier.
+- **Pressure tail.** Whole-window blame for fault 6 is dominated by samples after reactor pressure reaches about 3000 kPa (close to the plant's published shutdown limit (not verified here)); first-hour numbers are the fairer view. Faults 12, 13 and 18 reach it too (see the Diagnosis section).
 - **Permutation importance.** One dev vector per fault, every 5th post-onset sample, one process; the pass took about 8 hours, over the guide, and was not rerun.
 - **False-alarm streaks.** DPCA T² has a 3-in-a-row rate of 50% on fault-free runs at the 1% limit, so its delays are less trustworthy.
 - **Hidden-fault check.** Its headline is mean shift, which does not separate faults 14 and 19 from the control; spread and autocorrelation do.
@@ -295,4 +327,4 @@ Run from the project folder, in this order. Python is the project venv.
 
 ## How this was made
 
-Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 6.3 s, peak RAM 0.52 GB (the whole script, including the one fault 6 testing run it reads).
+Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 34.3 s, peak RAM 1.78 GB (the whole script, including the one fault 6 testing run it reads).

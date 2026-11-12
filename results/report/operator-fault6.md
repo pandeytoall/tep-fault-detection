@@ -25,7 +25,7 @@ A simulated plant, public Tennessee Eastman data. One testing run of fault 6; ti
 - Its valve (xmv_3) went from about 26.7% to fully open (100%) by the end of the run. That fits a controller asking for more A feed and not getting it. The data do not say why.
 - Condenser cooling water flow (xmv_11) left its normal band 4.8 h after the fault start and was at 96.0% at the end. Compressor recycle valve (xmv_5) left it 0.3 h after the start and was at -0.03% at the end. Both are among the top whole-window readings in `phase-4/top_readings_6.csv`, chosen by their blame rank among readings outside the feeds area that really leave their band here.
 - Stripper underflow (xmeas_17) is second in the blame list from the development runs, but in this run it stays inside its normal band (end of run 22.3 m3/h, normal 22.9, sd 0.62), so it is not drawn. SPE measures how a reading breaks away from the pattern of the others, not how far it moved.
-- From 13.8 h (sample 277) on, 24 of the 52 readings, reactor pressure among them (3000.0 kPa gauge), stay at one fixed value for the rest of the run. We did not check why. Valve positions still move after that point, but the measurements they respond to do not.
+- From 13.8 h (sample 277) on, 24 of the 52 readings, reactor pressure among them (3000.0 kPa gauge, close to the plant's published shutdown limit (not verified here)), stay at one fixed value for the rest of the run. This looks like the simulator's pressure shutdown regime; we did not check the cause. Valve positions still move after that point, but the measurements they respond to do not.
 
 ## Where to look first
 
@@ -51,7 +51,7 @@ Top five readings by relative SPE contribution (how much a reading adds to SPE, 
 | 4 | Reactor temperature (xmeas_9) | deg C | reactor | 15,369 x normal |
 | 5 | Reactor cooling water flow (xmv_10) | % | reactor | 14,214 x normal |
 
-Why they differ: right after the alarm the feed readings are by far the most out of line. Later the symptoms spread downstream, and the downstream readings dominate a whole-window average. The same pattern holds across the 100 fixed testing runs of fault 6: the top SPE reading is a feed reading in 100% of them in the first hour and in 22% over the whole post-fault window (`phase-4/test_blame.csv`, windows counted from the fault start).
+Why they differ: the main reason is the shutdown tail, not downstream spread. 86% of the whole window comes after 13.8 h, when 24 readings stop changing and reactor pressure sits at 3000.0 kPa gauge, close to the plant's published shutdown limit (not verified here). A whole-window average is mostly that stretch. Reactor pressure reaches 2990 kPa or more after the fault start in 100% of the 100 fixed testing runs of fault 6, at a median of sample 277 (`pressure_tail.csv`). Some symptoms do move downstream before that point (see the readings table: Condenser cooling water flow (xmv_11) 4.8 h after the start, Compressor recycle valve (xmv_5) 0.3 h after the start), but that is the smaller part. Right after the alarm the feed readings are by far the most out of line, which is why the first-hour list is the fairer view. Across the 100 fixed testing runs of fault 6 the top SPE reading is a feed reading in 100% of them in the first hour and in 22% over the whole post-fault window (`phase-4/test_blame.csv`, windows counted from the fault start).
 
 ## What this does and doesn't tell you
 
@@ -62,8 +62,8 @@ Why they differ: right after the alarm the feed readings are by far the most out
   - the controller that moves that valve: the public notes say controllers move the four feed valves but not how the loops are paired, so we cannot say which target it is chasing.
 - Three things we cannot say:
   1. **Why the A feed was lost.** The data show the reading and the valve, not whether the cause is a supply, a line or an instrument problem.
-  2. **That this is fault 6 and nothing else.** An A feed reading also leads the first-hour blame, in the median of 100 testing runs, for faults 3, 7, 14, 17 (`phase-4/test_blame.csv`, top three SPE readings). Faults 3 and 9 are noise-level and mean nothing; the others are real faults that share the symptom.
-  3. **What the plant did after 13.8 h.** Many readings stop changing then, so that stretch (86% of the window from the alarm on) is probably not realistic plant behaviour, and it dominates the whole-window list above.
+  2. **That this is fault 6 and nothing else.** An A feed reading also leads the first-hour blame, in the median of 100 testing runs, for faults 3, 7, 14, 17 (`phase-4/test_blame.csv`, top three SPE readings). Fault 3 is noise-level and means nothing; the others (7, 14, 17) are real faults that share the symptom.
+  3. **What the plant did after 13.8 h.** Many readings stop changing then, probably because the simulator's pressure shutdown regime has started (reactor pressure at 3000.0 kPa gauge, close to the plant's published shutdown limit (not verified here)). That stretch is 86% of the window from the alarm on, so it is probably not realistic plant behaviour, and it is the main reason the whole-window list above looks the way it does.
 - This is one run. Over all 500 testing runs of fault 6 the same alarm rule gives a median delay of 9 minutes with 0% of runs never detected (`scorecard.csv`, PCA SPE, 1% limit). The scorecard counts delay in samples from sample 160, so this run reads 9 minutes there against 6 on the run clock.
 
 ## Evidence
@@ -77,4 +77,4 @@ Why they differ: right after the alarm the feed readings are by far the most out
 
 ## How this was made
 
-Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 6.3 s, peak RAM 0.52 GB (the whole script, including the one fault 6 testing run it reads).
+Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 34.3 s, peak RAM 1.78 GB (the whole script, including the one fault 6 testing run it reads).

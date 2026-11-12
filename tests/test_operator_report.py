@@ -191,3 +191,20 @@ def test_operator_markdown_skips_the_freeze_sentences_when_nothing_freezes(world
 
 def test_title_finding_states_minutes_and_that_the_alarm_never_cleared(world):
     assert op.title_finding(_facts(world)) == "PCA SPE crossed its 1% limit 6 minutes after the A feed was lost, and never came back below it"
+
+
+def test_operator_markdown_names_the_shutdown_tail_as_the_main_reason_the_windows_differ(world):
+    facts = _facts(world, freeze_from=277)
+    facts["pressure"] = {"share_reached": 1.0, "median_first_sample": 277.0}
+    text = op.operator_markdown(facts, "x")
+    why = text.split("Why they differ:")[1].split("\n")[0]
+    assert "main reason is the shutdown tail" in why and "not downstream spread" in why
+    assert "not verified here" in why and "100%" in why and "sample 277" in why
+    assert "symptoms spread downstream" not in text
+    cannot = text.split("Three things we cannot say:")[1]
+    assert "main reason the whole-window list" in cannot
+
+
+def test_operator_markdown_keeps_the_old_wording_hedged_when_nothing_freezes(world):
+    text = op.operator_markdown(_facts(world), "x")
+    assert "main reason is the shutdown tail" not in text

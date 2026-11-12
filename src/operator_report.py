@@ -162,6 +162,7 @@ def compute_facts(frame, monitor, reference, run_id, fault, onset, top_readings,
 
 
 # --- the text -----------------------------------------------------------------------------------------------------------
+SHUTDOWN = "close to the plant's published shutdown limit (not verified here)"
 FIGURE_RUN = "figures/operator-fault6.png"
 FIGURE_READINGS = "figures/operator-fault6-readings.png"
 AREA = {"feeds": "feeds", "reactor": "reactor", "condenser/separator": "condenser / separator",
@@ -233,14 +234,37 @@ def operator_markdown(facts, how_made):
     freeze = ""
     if fr:
         freeze = (f"\n- From {fr['t_hours']:.1f} h (sample {fr['sample']}) on, {fr['n_frozen']} of the 52 readings, reactor pressure among them "
-                  f"({_num(fr['reactor_pressure'])} kPa gauge), stay at one fixed value for the rest of the run. We did not check why. "
+                  f"({_num(fr['reactor_pressure'])} kPa gauge, {SHUTDOWN}), stay at one fixed value for the rest of the run. "
+                  f"This looks like the simulator's pressure shutdown regime; we did not check the cause. "
                   f"Valve positions still move after that point, but the measurements they respond to do not.")
-        freeze_cant = (f"**What the plant did after {fr['t_hours']:.1f} h.** Many readings stop changing then, so that stretch "
-                       f"({fr['share_of_window']:.0%} of the window from the alarm on) is probably not realistic plant behaviour, "
-                       f"and it dominates the whole-window list above.")
+        freeze_cant = (f"**What the plant did after {fr['t_hours']:.1f} h.** Many readings stop changing then, probably because the simulator's "
+                       f"pressure shutdown regime has started (reactor pressure at {_num(fr['reactor_pressure'])} kPa gauge, {SHUTDOWN}). "
+                       f"That stretch is {fr['share_of_window']:.0%} of the window from the alarm on, so it is probably not realistic plant behaviour, "
+                       f"and it is the main reason the whole-window list above looks the way it does.")
     else:
         freeze_cant = "**How the plant behaves later in the run.** One run does not show it."
+    pr = f.get("pressure")
+    pr_sentence = (f" Reactor pressure reaches 2990 kPa or more after the fault start in {pr['share_reached']:.0%} of the 100 fixed testing runs of fault 6, "
+                   f"at a median of sample {pr['median_first_sample']:.0f} (`pressure_tail.csv`)." if pr else "")
+    down_text = ", ".join(_name(r) + " " + format(r["departure_after_h"], ".1f") + " h after the start" for r in down)
+    if fr:
+        why = (f"Why they differ: the main reason is the shutdown tail, not downstream spread. {fr['share_of_window']:.0%} of the whole window comes after "
+               f"{fr['t_hours']:.1f} h, when {fr['n_frozen']} readings stop changing and reactor pressure sits at {_num(fr['reactor_pressure'])} kPa gauge, "
+               f"{SHUTDOWN}. A whole-window average is mostly that stretch.{pr_sentence} Some symptoms do move downstream before that point "
+               f"(see the readings table: {down_text}), but that is the smaller part. "
+               f"Right after the alarm the feed readings are by far the most out of line, which is why the first-hour list is the fairer view. "
+               f"Across the 100 fixed testing runs of fault 6 the top SPE reading is a feed reading in {p4['first_hour_top1']:.0%} of them in the first hour "
+               f"and in {p4['post_top1']:.0%} over the whole post-fault window (`phase-4/test_blame.csv`, windows counted from the fault start).")
+    else:
+        why = (f"Why they differ: right after the alarm the feed readings are by far the most out of line. Later the readings downstream move and dominate a "
+               f"whole-window average. Across the 100 fixed testing runs of fault 6 the top SPE reading is a feed reading in {p4['first_hour_top1']:.0%} of them "
+               f"in the first hour and in {p4['post_top1']:.0%} over the whole post-fault window (`phase-4/test_blame.csv`).")
     others = ", ".join(map(str, p4["faults_with_a_feed_in_top3"]))
+    noise = [x for x in p4["faults_with_a_feed_in_top3"] if x in (3, 9, 15)]
+    real = [x for x in p4["faults_with_a_feed_in_top3"] if x not in (3, 9, 15)]
+    noise_note = (f"Fault{'s' if len(noise) > 1 else ''} {', '.join(map(str, noise))} {'are' if len(noise) > 1 else 'is'} noise-level and "
+                  f"mean{'' if len(noise) > 1 else 's'} nothing; ") if noise else ""
+    noise_note += f"the others ({', '.join(map(str, real))}) are real faults that share the symptom." if noise else "these are real faults that share the symptom."
     first, whole = f["windows"]["first_hour"], f["windows"]["whole"]
     return f"""# Shift handover: fault {f['fault']} (A feed loss), testing run {f['run_id']}
 
@@ -276,7 +300,7 @@ Top five readings by relative SPE contribution (how much a reading adds to SPE, 
 
 {_top_table(whole)}
 
-Why they differ: right after the alarm the feed readings are by far the most out of line. Later the symptoms spread downstream, and the downstream readings dominate a whole-window average. The same pattern holds across the 100 fixed testing runs of fault 6: the top SPE reading is a feed reading in {p4['first_hour_top1']:.0%} of them in the first hour and in {p4['post_top1']:.0%} over the whole post-fault window (`phase-4/test_blame.csv`, windows counted from the fault start).
+{why}
 
 ## What this does and doesn't tell you
 
@@ -287,7 +311,7 @@ Why they differ: right after the alarm the feed readings are by far the most out
   - the controller that moves that valve: the public notes say controllers move the four feed valves but not how the loops are paired, so we cannot say which target it is chasing.
 - Three things we cannot say:
   1. **Why the A feed was lost.** The data show the reading and the valve, not whether the cause is a supply, a line or an instrument problem.
-  2. **That this is fault 6 and nothing else.** An A feed reading also leads the first-hour blame, in the median of 100 testing runs, for faults {others} (`phase-4/test_blame.csv`, top three SPE readings). Faults 3 and 9 are noise-level and mean nothing; the others are real faults that share the symptom.
+  2. **That this is fault 6 and nothing else.** An A feed reading also leads the first-hour blame, in the median of 100 testing runs, for faults {others} (`phase-4/test_blame.csv`, top three SPE readings). {noise_note}
   3. {freeze_cant}
 - This is one run. Over all 500 testing runs of fault 6 the same alarm rule gives a median delay of {sc['median_delay_min']:.0f} minutes with {sc['never_share']:.0%} of runs never detected (`scorecard.csv`, PCA SPE, 1% limit). The scorecard counts delay in samples from sample {f['onset']}, so this run reads {f['delay_min_scorecard_rule']} minutes there against {minutes} on the run clock.
 

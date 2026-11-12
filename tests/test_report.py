@@ -344,3 +344,56 @@ def test_broken_links_resolves_parent_folders_from_the_base_directory(tmp_path):
 
 def test_detectable_faults_are_those_with_a_known_unit_outside_the_hidden_group():
     assert report.detectable_faults(_blame()) == [1, 2, 4]
+
+
+# --- the pressure-limit tail ---------------------------------------------------------------------------------------------
+def _pressure_frame():
+    """Fault 1: runs 1-3 reach the level at samples 30, 50 and 80 (after onset 20); fault 2: run 1 reaches it before the onset only."""
+    parts = []
+    for fault, run, first in ((1, 1, 30), (1, 2, 50), (1, 3, 80), (1, 4, None), (2, 1, 10), (2, 2, None)):
+        s = np.arange(1, 101)
+        p = np.full(100, 2700.0)
+        if first is not None:
+            p[first - 1:] = 3000.0
+        if (fault, run) == (2, 1):
+            p[20:] = 2700.0                                              # only a pre-onset spike
+        parts.append(pd.DataFrame({"faultNumber": fault, "simulationRun": run, "sample": s, "xmeas_7": p}))
+    return pd.concat(parts, ignore_index=True)
+
+
+def test_pressure_limit_table_gives_share_of_runs_and_median_first_sample_per_fault():
+    t = report.pressure_limit_table(_pressure_frame(), onset=20, threshold=2990.0)
+    assert t.loc[1, "n_runs"] == 4 and t.loc[1, "share_reached"] == pytest.approx(0.75)
+    assert t.loc[1, "median_first_sample"] == 50                        # median of 30, 50, 80
+    assert t.loc[1, "median_first_hours_after_onset"] == pytest.approx((50 - 20) * 0.05)
+
+
+def test_pressure_limit_table_ignores_samples_before_the_onset():
+    t = report.pressure_limit_table(_pressure_frame(), onset=20, threshold=2990.0)
+    assert t.loc[2, "share_reached"] == 0.0 and np.isnan(t.loc[2, "median_first_sample"])
+    assert t.loc[2, "n_runs"] == 2
+
+
+def _window_blame():
+    rows = []
+    for fault, unit, first, post in ((1, "feeds", 0.4, 1.0), (6, "feeds", 1.0, 1.0), (4, "reactor", 1.0, 0.8)):
+        rows.append(_blame_row(fault, "spe", "first_hour", unit, 0.0, first, 0.0))
+        rows.append(_blame_row(fault, "spe", "post", unit, 0.0, post, 0.0))
+    rows.append(_blame_row(3, "spe", "first_hour", "feeds", 0, 0.9, 0, group="hidden"))
+    rows.append(_blame_row(3, "spe", "post", "feeds", 0, 0.9, 0, group="hidden"))
+    return pd.DataFrame(rows)
+
+
+def _pressure_table():
+    return pd.DataFrame({"share_reached": [0.0, 0.0, 1.0, 0.0], "median_first_sample": [np.nan, np.nan, 277.0, np.nan]}, index=pd.Index([1, 3, 6, 4], name="fault"))
+
+
+def test_window_comparison_puts_first_hour_beside_whole_window_with_the_pressure_share():
+    table, s = report.window_comparison(_window_blame(), _pressure_table(), affected_share=0.5)
+    assert list(table.columns) == ["Fault", "Top-5 hit, first hour", "Top-5 hit, whole window", "Runs reaching 2990 kPa"]
+    assert list(table["Fault"]) == ["1", "4", "6", "Mean, 3 faults"]
+    assert list(table.iloc[2]) == ["6", "1.00", "1.00", "100%"]
+    assert s["mean_first_hour"] == pytest.approx((0.4 + 1.0 + 1.0) / 3) and s["mean_whole"] == pytest.approx((1.0 + 1.0 + 0.8) / 3)
+    assert s["affected"] == [6]
+    assert s["mean_whole_without_affected"] == pytest.approx((1.0 + 0.8) / 2)
+    assert s["mean_first_hour_without_affected"] == pytest.approx((0.4 + 1.0) / 2)
