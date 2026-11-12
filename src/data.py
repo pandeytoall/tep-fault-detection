@@ -14,6 +14,7 @@ MODELS_DIR = ROOT / "data" / "models"  # saved phase 3 models (git-ignored with 
 RESULTS_2 = ROOT / "results" / "phase-2"
 RESULTS_2B = ROOT / "results" / "phase-2b"
 RESULTS_3 = ROOT / "results" / "phase-3"
+RESULTS_4 = ROOT / "results" / "phase-4"
 PCA_MODEL = RESULTS_2 / "pca.npz"  # the PCA monitor the assistant uses
 
 # Smallest first. Rows and samples per run from the tep-data skill.

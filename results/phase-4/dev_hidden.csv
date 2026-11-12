@@ -1,0 +1,22 @@
+fault,group,n_runs,median_max_abs_shift,median_n_shift_gt_1sd,median_max_spread_ratio,median_max_abs_dacf,most_common_top_reading,effect_vs_control,verdict,note,machine,runtime_s,peak_ram_gb
+0,control,20,0.7035621333240369,0.0,10.594211576210492,0.7664897392157002,xmeas_41,1.0,control (the noise floor),,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+1,benchmark,20,16.42615662164169,14.0,71.9222161803347,1.2114720219535493,xmv_3,23.34713004526689,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+2,benchmark,20,27.411549266262888,23.0,46.207212208854614,0.9815718531806035,xmeas_10,38.96109237254537,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+3,hidden,20,0.7014795357223216,0.0,12.808044313678597,0.9216012965573522,xmeas_40,0.9970399236924876,looks like the fault-free control,near the false-alarm level; blame is mostly noise,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+4,benchmark,20,7.021120420310326,1.0,12.861062073583527,0.9220179014241217,xmv_10,9.979389293079869,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+5,the rest,20,1.8923832218967849,1.0,42.81017036139135,1.1718820461580204,xmv_11,2.689717271957297,somewhat above the control,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+6,benchmark,20,55.30929325373921,38.0,128.16016641427717,1.3258062599682794,xmv_10,78.61323205731088,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+7,benchmark,20,12.292797723274735,3.0,82.30788782065349,1.2757421185118742,xmv_4,17.472227598714564,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+8,the rest,20,3.48100108810159,9.0,69.64975906701409,1.2402477646620138,xmeas_34,4.947681126122173,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+9,hidden,20,0.7023634141448094,0.0,12.722596670986903,0.9175646888188961,xmeas_40,0.9982962141899763,looks like the fault-free control,near the false-alarm level; blame is mostly noise,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+10,the rest,20,0.9225787659163602,0.0,30.896513055264627,0.9572178559445695,xmeas_19,1.3112967884692164,looks like the fault-free control,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+11,the rest,20,1.1497893532913248,1.0,12.815894247654771,1.1259134243705666,xmv_10,1.6342399609527745,somewhat above the control,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+12,the rest,20,2.5081772026112166,3.5,87.42265231056962,1.3130545452761746,xmv_9,3.564969010997121,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+13,the rest,20,4.851671554335901,11.5,135.9550144362812,1.2553625654864462,xmv_9,6.895867933388884,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,the rest,20,0.705762178145534,0.0,18.72973966411437,1.1571495168203185,xmeas_40,1.0031270085715143,looks like the fault-free control,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+15,hidden,20,0.7007597681160509,0.0,12.40188992357291,0.9155319236549335,xmeas_40,0.9960168902286625,looks like the fault-free control,near the false-alarm level; blame is mostly noise,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+16,unknown cause,20,0.8029818625500798,0.0,22.31887880807807,0.9229845728275852,xmv_9,1.1413090962646415,looks like the fault-free control,unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+17,unknown cause,20,27.226587668459494,2.0,37.490160234352246,1.139113102192759,xmeas_21,38.6981993186945,"clear shift, well above the control",unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+18,unknown cause,20,23.011458266714918,31.0,163.1811989067573,1.3338806874300522,xmeas_22,32.707073301394715,"clear shift, well above the control",unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+19,unknown cause,20,0.7014878444786334,0.0,13.285960716147429,0.7880791391999904,xmeas_40,0.9970517332483438,looks like the fault-free control,unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+20,unknown cause,20,4.076463654486572,3.0,17.448324714364723,0.9430577594216097,xmv_5,5.794035041691322,"clear shift, well above the control",unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7

@@ -1,0 +1,178 @@
+stored SPE and T2 references match the `fit` runs (largest relative gap 0.00e+00)
+permutation importance: 38400 pooled post-onset rows, 156 inputs x 5 repeats
+permutation importance done in 28671 s
+
+Blame by fault group, post-onset window (dev, 20 runs per fault; baseline = a method that picks readings at random)
+        group  method  top1_hit  top5_hit  unit_mass  smear  baseline_unit_share  baseline_top5_hit  n_faults
+    benchmark     spe     0.490     0.800      0.350  0.547                0.169              0.599         5
+    benchmark      t2     0.600     0.600      0.282  0.596                0.169              0.599         5
+    benchmark rbc_spe     0.520     0.800      0.349  0.516                0.169              0.599         5
+    benchmark  rbc_t2     0.600     0.600      0.295  0.605                0.169              0.599         5
+    benchmark    perm     0.800     0.800      0.793  0.969                0.169              0.599         5
+       hidden     spe     0.167     0.650      0.160  0.127                0.147              0.549         3
+       hidden      t2     0.117     0.417      0.150  0.124                0.147              0.549         3
+       hidden rbc_spe     0.167     0.633      0.150  0.122                0.147              0.549         3
+       hidden  rbc_t2     0.133     0.483      0.150  0.119                0.147              0.549         3
+       hidden    perm     0.000     0.000      0.038  0.694                0.147              0.549         3
+     the rest     spe     0.479     0.721      0.339  0.601                0.181              0.622         7
+     the rest      t2     0.357     0.529      0.311  0.473                0.181              0.622         7
+     the rest rbc_spe     0.471     0.707      0.331  0.578                0.181              0.622         7
+     the rest  rbc_t2     0.393     0.450      0.306  0.495                0.181              0.622         7
+     the rest    perm     0.286     0.571      0.330  0.664                0.181              0.622         7
+unknown cause     spe       NaN       NaN        NaN  0.623                  NaN                NaN         5
+unknown cause      t2       NaN       NaN        NaN  0.417                  NaN                NaN         5
+unknown cause rbc_spe       NaN       NaN        NaN  0.605                  NaN                NaN         5
+unknown cause  rbc_t2       NaN       NaN        NaN  0.429                  NaN                NaN         5
+unknown cause    perm       NaN       NaN        NaN  0.779                  NaN                NaN         5
+
+Blame per fault (post-onset window), methods side by side
+-- top1_hit
+method   spe    t2  rbc_spe  rbc_t2  perm  random
+fault                                            
+1       0.00  1.00     0.00    1.00   1.0    0.15
+2       0.00  0.00     0.00    0.00   0.0    0.15
+3       0.05  0.00     0.05    0.00   0.0    0.15
+4       1.00  1.00     1.00    1.00   1.0    0.23
+5       0.45  0.00     0.40    0.00   1.0    0.13
+6       0.45  0.00     0.60    0.00   1.0    0.15
+7       1.00  1.00     1.00    1.00   1.0    0.15
+8       0.00  0.00     0.00    0.00   0.0    0.15
+9       0.05  0.00     0.05    0.00   0.0    0.15
+10      0.00  0.00     0.00    0.00   0.0    0.15
+11      1.00  1.00     1.00    1.00   0.0    0.23
+12      0.00  0.50     0.00    0.75   0.0    0.13
+13      0.90  0.00     0.90    0.00   0.0    0.23
+14      1.00  1.00     1.00    1.00   1.0    0.23
+15      0.40  0.35     0.40    0.40   0.0    0.13
+16       NaN   NaN      NaN     NaN   NaN     NaN
+17       NaN   NaN      NaN     NaN   NaN     NaN
+18       NaN   NaN      NaN     NaN   NaN     NaN
+19       NaN   NaN      NaN     NaN   NaN     NaN
+20       NaN   NaN      NaN     NaN   NaN     NaN
+-- top5_hit
+method   spe    t2  rbc_spe  rbc_t2  perm  random
+fault                                            
+1       1.00  1.00     1.00    1.00   1.0    0.57
+2       0.00  0.00     0.00    0.00   0.0    0.57
+3       0.60  0.20     0.55    0.30   0.0    0.57
+4       1.00  1.00     1.00    1.00   1.0    0.73
+5       1.00  0.00     1.00    0.00   1.0    0.51
+6       1.00  0.00     1.00    0.00   1.0    0.57
+7       1.00  1.00     1.00    1.00   1.0    0.57
+8       0.10  0.05     0.10    0.00   0.0    0.57
+9       0.55  0.25     0.55    0.35   0.0    0.57
+10      0.00  0.00     0.00    0.00   0.0    0.57
+11      1.00  1.00     1.00    1.00   1.0    0.73
+12      0.95  1.00     0.85    1.00   1.0    0.51
+13      1.00  0.65     1.00    0.15   0.0    0.73
+14      1.00  1.00     1.00    1.00   1.0    0.73
+15      0.80  0.80     0.80    0.80   0.0    0.51
+16       NaN   NaN      NaN     NaN   NaN     NaN
+17       NaN   NaN      NaN     NaN   NaN     NaN
+18       NaN   NaN      NaN     NaN   NaN     NaN
+19       NaN   NaN      NaN     NaN   NaN     NaN
+20       NaN   NaN      NaN     NaN   NaN     NaN
+-- unit_mass
+method   spe    t2  rbc_spe  rbc_t2  perm  random
+fault                                            
+1       0.24  0.52     0.23    0.49  0.98    0.15
+2       0.09  0.01     0.10    0.01  0.01    0.15
+3       0.18  0.15     0.17    0.15  0.07    0.15
+4       0.81  0.54     0.80    0.54  0.98    0.23
+5       0.48  0.12     0.46    0.12  0.67    0.13
+6       0.27  0.05     0.28    0.04  1.00    0.15
+7       0.34  0.29     0.33    0.39  1.00    0.15
+8       0.12  0.09     0.12    0.08  0.12    0.15
+9       0.18  0.15     0.17    0.15  0.02    0.15
+10      0.06  0.11     0.06    0.11  0.06    0.15
+11      0.74  0.65     0.73    0.63  0.26    0.23
+12      0.19  0.22     0.16    0.28  0.17    0.13
+13      0.26  0.13     0.26    0.13  0.04    0.23
+14      0.52  0.85     0.52    0.79  1.00    0.23
+15      0.12  0.14     0.10    0.14  0.02    0.13
+16       NaN   NaN      NaN     NaN   NaN     NaN
+17       NaN   NaN      NaN     NaN   NaN     NaN
+18       NaN   NaN      NaN     NaN   NaN     NaN
+19       NaN   NaN      NaN     NaN   NaN     NaN
+20       NaN   NaN      NaN     NaN   NaN     NaN
+-- smear
+method   spe    t2  rbc_spe  rbc_t2  perm
+fault                                    
+1       0.34  0.68     0.33    0.70  0.99
+2       0.50  0.86     0.41    0.84  0.87
+3       0.13  0.12     0.12    0.12  0.65
+4       0.77  0.47     0.76    0.50  0.99
+5       0.96  0.30     0.92    0.31  0.80
+6       0.69  0.55     0.66    0.49  1.00
+7       0.42  0.43     0.41    0.50  1.00
+8       0.32  0.36     0.31    0.38  0.46
+9       0.13  0.12     0.12    0.12  0.66
+10      0.72  0.29     0.71    0.30  0.80
+11      0.69  0.60     0.68    0.64  0.68
+12      0.40  0.39     0.34    0.42  0.35
+13      0.45  0.48     0.43    0.54  0.57
+14      0.66  0.90     0.65    0.89  1.00
+15      0.13  0.12     0.12    0.12  0.77
+16      0.75  0.21     0.74    0.22  0.70
+17      0.72  0.84     0.71    0.82  0.93
+18      0.62  0.49     0.58    0.55  0.80
+19      0.38  0.23     0.37    0.24  0.69
+20      0.64  0.31     0.63    0.31  0.78
+
+Top 3 SPE readings per fault (median over runs)
+  fault  1: Reactor level (xmeas_8); Reactor feed rate (xmeas_6); Stripper temperature (xmeas_18)
+  fault  2: Condenser cooling water flow (xmv_11); Stripper underflow (xmeas_17); Stripper steam flow (xmeas_19)
+  fault  3: Reactor cooling water outlet temperature (xmeas_21); Reactor cooling water flow (xmv_10); A feed (xmeas_1)   [near the false-alarm level; blame is mostly noise]
+  fault  4: Reactor cooling water flow (xmv_10); Reactor temperature (xmeas_9); Reactor feed analysis, component B (xmeas_24)
+  fault  5: Stripper underflow (xmeas_17); Condenser cooling water flow (xmv_11); Stripper temperature (xmeas_18)
+  fault  6: A feed (xmeas_1); Condenser cooling water flow (xmv_11); Stripper underflow (xmeas_17)
+  fault  7: A and C feed (xmeas_4); A and C feed flow (xmv_4); Reactor feed rate (xmeas_6)
+  fault  8: Stripper pressure (xmeas_16); Compressor work (xmeas_20); Reactor pressure (xmeas_7)
+  fault  9: Reactor cooling water outlet temperature (xmeas_21); Purge gas analysis, component F (xmeas_34); Stripper pressure (xmeas_16)   [near the false-alarm level; blame is mostly noise]
+  fault 10: Stripper temperature (xmeas_18); Stripper steam flow (xmeas_19); Stripper steam valve (xmv_9)
+  fault 11: Reactor cooling water flow (xmv_10); Reactor temperature (xmeas_9); Reactor feed analysis, component B (xmeas_24)
+  fault 12: Stripper underflow (xmeas_17); Stripper temperature (xmeas_18); Condenser cooling water flow (xmv_11)
+  fault 13: Reactor pressure (xmeas_7); Product separator pressure (xmeas_13); Stripper pressure (xmeas_16)
+  fault 14: Reactor cooling water outlet temperature (xmeas_21); A feed (xmeas_1); A feed flow (xmv_3)
+  fault 15: Product separator temperature (xmeas_11); Separator cooling water outlet temperature (xmeas_22); Stripper temperature (xmeas_18)   [near the false-alarm level; blame is mostly noise]
+  fault 16: Stripper steam valve (xmv_9); Stripper steam flow (xmeas_19); Stripper temperature (xmeas_18)   [unknown cause]
+  fault 17: Reactor cooling water outlet temperature (xmeas_21); A feed (xmeas_1); A feed flow (xmv_3)   [unknown cause]
+  fault 18: Stripper steam valve (xmv_9); Compressor recycle valve (xmv_5); Stripper underflow (xmeas_17)   [unknown cause]
+  fault 19: Compressor recycle valve (xmv_5); Recycle flow (xmeas_5); Product separator pressure (xmeas_13)   [unknown cause]
+  fault 20: Compressor recycle valve (xmv_5); Recycle flow (xmeas_5); Reactor pressure (xmeas_7)   [unknown cause]
+
+Within-run before/after (dev: 20 samples before, 480 after the onset); fault 0 = fault-free control
+ fault         group  median_max_abs_shift  median_n_shift_gt_1sd  median_max_spread_ratio  median_max_abs_dacf  effect_vs_control                             verdict
+     0       control                  0.70                    0.0                    10.59                 0.77               1.00           control (the noise floor)
+     1     benchmark                 16.43                   14.0                    71.92                 1.21              23.35 clear shift, well above the control
+     2     benchmark                 27.41                   23.0                    46.21                 0.98              38.96 clear shift, well above the control
+     3        hidden                  0.70                    0.0                    12.81                 0.92               1.00   looks like the fault-free control
+     4     benchmark                  7.02                    1.0                    12.86                 0.92               9.98 clear shift, well above the control
+     5      the rest                  1.89                    1.0                    42.81                 1.17               2.69          somewhat above the control
+     6     benchmark                 55.31                   38.0                   128.16                 1.33              78.61 clear shift, well above the control
+     7     benchmark                 12.29                    3.0                    82.31                 1.28              17.47 clear shift, well above the control
+     8      the rest                  3.48                    9.0                    69.65                 1.24               4.95 clear shift, well above the control
+     9        hidden                  0.70                    0.0                    12.72                 0.92               1.00   looks like the fault-free control
+    10      the rest                  0.92                    0.0                    30.90                 0.96               1.31   looks like the fault-free control
+    11      the rest                  1.15                    1.0                    12.82                 1.13               1.63          somewhat above the control
+    12      the rest                  2.51                    3.5                    87.42                 1.31               3.56 clear shift, well above the control
+    13      the rest                  4.85                   11.5                   135.96                 1.26               6.90 clear shift, well above the control
+    14      the rest                  0.71                    0.0                    18.73                 1.16               1.00   looks like the fault-free control
+    15        hidden                  0.70                    0.0                    12.40                 0.92               1.00   looks like the fault-free control
+    16 unknown cause                  0.80                    0.0                    22.32                 0.92               1.14   looks like the fault-free control
+    17 unknown cause                 27.23                    2.0                    37.49                 1.14              38.70 clear shift, well above the control
+    18 unknown cause                 23.01                   31.0                   163.18                 1.33              32.71 clear shift, well above the control
+    19 unknown cause                  0.70                    0.0                    13.29                 0.79               1.00   looks like the fault-free control
+    20 unknown cause                  4.08                    3.0                    17.45                 0.94               5.79 clear shift, well above the control
+FAIL  fault 6: an A-feed reading is the top SPE reading in 45% of runs, post-onset window (need at least 80%); first hour 100%
+PASS  fault 4: a reactor cooling reading is in the top 5 SPE readings in 100% of runs, post-onset window (need at least 50%); first hour 100%
+PASS  fault 1: SPE top5_hit 1.00 above the random baseline 0.57, post-onset window; first hour 0.55
+FAIL  fault 2: SPE top5_hit 0.00 above the random baseline 0.57, post-onset window; first hour 0.05
+PASS  fault 7: SPE top5_hit 1.00 above the random baseline 0.57, post-onset window; first hour 1.00
+PASS  fault-free dev runs, spe: median relative contribution over readings 0.99 (0.5 to 2)
+PASS  fault-free dev runs, t2: median relative contribution over readings 0.99 (0.5 to 2)
+PASS  fault-free dev runs, rbc_spe: median relative contribution over readings 0.99 (0.5 to 2)
+PASS  fault-free dev runs, rbc_t2: median relative contribution over readings 0.99 (0.5 to 2)
+PASS  faults 3, 9, 15: largest median |shift| at most 3x the fault-free control's (control 0.70 sd on 20 unpaired runs; 0.70 sd on the 20 dev IDs, which share noise streams with the faulty dev runs)
+2 sanity item(s) failed
+runtime 28681.1 s, peak RAM 1.70 GB

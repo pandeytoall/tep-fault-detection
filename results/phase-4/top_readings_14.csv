@@ -1,0 +1,11 @@
+fault,rank,tag,name,unit,plant_unit,scoring_unit,spe,t2,rbc_spe,rbc_t2,perm,rank_spe,rank_t2,rank_rbc_spe,rank_rbc_t2,rank_perm,note,machine,runtime_s,peak_ram_gb
+14,1,xmeas_21,Reactor cooling water outlet temperature,deg C,reactor,reactor,227.97821174386655,57.79800903313762,227.97821174386274,118.75058655811767,0.205625,1,3,1,3,1,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,2,xmeas_1,A feed,kscmh,feed,feeds,31.61897522847479,2.387900880024415,31.618975228474994,4.767224039546477,0.0,2,10,2,10,5,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,3,xmv_3,A feed flow,%,feed,feeds,31.220967292305154,2.366773243144962,31.22096729230543,4.716615279641847,0.0,3,11,3,11,46,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,4,xmeas_2,D feed,kg/h,feed,feeds,30.469771613563644,24.839662529205427,30.469771613563843,53.833248298116146,0.0,4,4,4,4,6,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,5,xmv_1,D feed flow,%,feed,feeds,30.04915898023583,24.67145297409786,30.049158980236115,53.59743045356547,0.0,5,5,5,5,44,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,6,xmeas_22,Separator cooling water outlet temperature,deg C,condenser,condenser/separator,15.132422403227421,5.347094330771551,15.132422403227462,12.065393802916118,0.0,6,7,6,7,24,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,7,xmeas_24,"Reactor feed analysis, component B",mol %,reactor,reactor,12.702007369639439,1.0121802032142089,12.702007369639851,1.0679837031594523,0.0,7,37,7,29,26,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,8,xmeas_17,Stripper underflow,m3/h,product,stripper,12.548857408712088,1.0260147877259813,7.621487153736247,1.0308172739403751,0.0,8,32,14,34,20,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,9,xmeas_13,Product separator pressure,kPa gauge,separator,condenser/separator,10.145507512091537,1.1901844245963002,10.145507512091346,2.678745821469038,0.0,9,19,9,14,16,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7
+14,10,xmeas_7,Reactor pressure,kPa gauge,reactor,reactor,9.520494105658415,1.0927786437182085,9.520494105658397,1.9997451495854284,0.0,10,25,10,17,11,,"laptop, Intel i5-1135G7, 7.7 GB RAM",28681.1,1.7

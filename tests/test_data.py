@@ -257,4 +257,5 @@ def test_shared_paths_for_the_pca_model_and_the_phase_2b_results():
 def test_every_results_folder_and_the_models_folder_is_a_path_constant_in_data():
     assert data.RESULTS_2 == data.ROOT / "results" / "phase-2"
     assert data.RESULTS_3 == data.ROOT / "results" / "phase-3"
+    assert data.RESULTS_4 == data.ROOT / "results" / "phase-4"
     assert data.MODELS_DIR == data.ROOT / "data" / "models"
