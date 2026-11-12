@@ -96,3 +96,9 @@ _Avoid_: diagnosis accuracy (too vague)
 
 **Closed-set classifier**:
 A supervised model that can only name faults it was trained on (here faults 1-20, plus normal). It is the `classify_fault` tool in assistant v1.1, so v1.1 scores measure "assistant plus a trained classifier", not diagnosis from reasoning alone.
+
+**Blame**:
+Which readings an alarm statistic points at, as relative contributions over a window. It shows where the symptoms are, not where the cause is. Scored as `top5_hit` (a top-5 reading sits in the faulted scoring unit), next to what random picking scores.
+
+**RBC (reconstruction-based contribution)**:
+A way to assign blame by asking how much of the statistic would vanish if one reading were rebuilt from the others. For SPE in the relative form it gives the same ranking as plain SPE contributions.
