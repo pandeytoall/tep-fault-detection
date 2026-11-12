@@ -23,8 +23,7 @@ sys.path.insert(0, str(ROOT))
 from src import data, evaluate, mspc, prepare, split, style  # noqa: E402
 
 NORMAL, FAULTY = "TEP_FaultFree_Training", "TEP_Faulty_Training"
-OUT = ROOT / "results" / "phase-2"
-SPLIT_FILE = "results/phase-1/run_split.json"
+OUT = data.RESULTS_2
 SWEEP = range(5, 31)
 SHOWN_FAULTS = (1, 2, 4, 6, 7, 3, 9, 15)
 # Explicit override of the stop in mspc.lag_problem (spec Comments, 2026-10-25): the user accepts the 90% rule's L
@@ -125,7 +124,7 @@ def main():
     rows = []
     for kind, monitor in monitors.items():
         rows += mspc.scorecard_rows(kind, monitor.score(dev_faulty), monitor.score(dev_normal), all_limits[kind], onset, skip,
-                                    machine=machine, split_file=SPLIT_FILE, train_time_s=train_time[kind],
+                                    machine=machine, split_file=split.SPLIT_FILE, train_time_s=train_time[kind],
                                     peak_ram_gb=prepare.peak_ram_gb())
     (OUT / "dev_scores.csv").unlink(missing_ok=True)
     evaluate.write_scorecard(rows, OUT / "dev_scores.csv")

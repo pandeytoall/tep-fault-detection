@@ -18,11 +18,10 @@ import psutil
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src import data, evaluate, mspc, prepare, style  # noqa: E402
+from src import data, evaluate, mspc, prepare, split, style  # noqa: E402
 
 NORMAL, FAULTY = "TEP_FaultFree_Testing", "TEP_Faulty_Testing"
-OUT = ROOT / "results" / "phase-2"
-SPLIT_FILE = "results/phase-1/run_split.json"
+OUT = data.RESULTS_2
 KINDS = ("pca", "dpca")
 MODELS = [f"{k}-{s}" for k in KINDS for s in mspc.STATS]
 
@@ -99,7 +98,7 @@ def main():
     rows = []
     for k in KINDS:
         rows += mspc.scorecard_rows(k, faulty[k], normal[k], limits[k], onset, skip, after=onset, machine=machine,
-                                    split_file=SPLIT_FILE, train_time_s=train_time[k], peak_ram_gb=peak)
+                                    split_file=split.SPLIT_FILE, train_time_s=train_time[k], peak_ram_gb=peak)
     evaluate.write_scorecard(rows, evaluate.DEFAULT_SCORECARD)
     df = pd.DataFrame(rows)
 

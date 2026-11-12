@@ -251,6 +251,32 @@ FAR_WINDOWS = {"1%": (0.005, 0.02), "5%": (0.025, 0.10)}  # plausible test FAR a
 LEAK_BOUND_1PCT = 0.10  # max FDR on faults 3/9/15 at the 1% limit; at other limits the bound is FAR + 0.05
 
 
+def limit_tables(df, limit_name):
+    """(FAR per model, FDR table fault x model) at one limit of a long-format scorecard (model, limit_name, metric, fault, value)."""
+    sel = df[df["limit_name"] == limit_name]
+    far = sel[sel["metric"] == "far"].set_index("model")["value"]
+    fdr = sel[sel["metric"] == "fdr"].pivot(index="fault", columns="model", values="value")
+    return far, fdr
+
+
+def far_problem(far, model, limit_name):
+    """Message when the FAR of `model` lies outside FAR_WINDOWS (1% and 5% limits only), else None."""
+    window = FAR_WINDOWS.get(limit_name)
+    if window and not window[0] <= far[model] <= window[1]:
+        return f"FAR out of range: {model} at {limit_name} = {far[model]:.4f}, expected {window}"
+    return None
+
+
+def leak_problem(far, fdr, model, limit_name):
+    """Message when an unsupervised model's max FDR on faults 3, 9, 15 is above LEAK_BOUND_1PCT (1% limit) or FAR + 0.05
+    (other limits), else None."""
+    worst = fdr.loc[list(evaluate.HARD_FAULTS), model].max()
+    bound = LEAK_BOUND_1PCT if limit_name == "1%" else far[model] + 0.05
+    if worst > bound:
+        return f"LEAK? {model} at {limit_name}: max FDR on 3/9/15 = {worst:.3f} > {bound:.3f}"
+    return None
+
+
 def final_check_failures(df, models):
     """Stop conditions for the final run: a list of messages, empty when every check passes.
 
@@ -261,17 +287,9 @@ def final_check_failures(df, models):
     """
     failures = []
     for limit_name in df["limit_name"].unique():
-        sel = df[df["limit_name"] == limit_name]
-        far = sel[sel["metric"] == "far"].set_index("model")["value"]
-        fdr = sel[sel["metric"] == "fdr"].pivot(index="fault", columns="model", values="value")
+        far, fdr = limit_tables(df, limit_name)
         for m in models:
-            worst = fdr.loc[list(evaluate.HARD_FAULTS), m].max()
-            bound = LEAK_BOUND_1PCT if limit_name == "1%" else far[m] + 0.05
-            if worst > bound:
-                failures.append(f"LEAK? {m} at {limit_name}: max FDR on 3/9/15 = {worst:.3f} > {bound:.3f}")
-            window = FAR_WINDOWS.get(limit_name)
-            if window and not window[0] <= far[m] <= window[1]:
-                failures.append(f"FAR out of range: {m} at {limit_name} = {far[m]:.4f}, expected {window}")
+            failures += [p for p in (leak_problem(far, fdr, m, limit_name), far_problem(far, m, limit_name)) if p]
         if limit_name == "1%":
             if fdr.loc[4, "pca-t2"] >= 0.5:
                 failures.append(f"implausible: pca-t2 fault 4 FDR = {fdr.loc[4, 'pca-t2']:.3f}, expected < 0.5")

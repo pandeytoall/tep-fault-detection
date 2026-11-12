@@ -5,7 +5,7 @@ FaultFree_Testing runs and all 500 runs x 20 faults of Faulty_Testing (one fault
 1% and 5% limit to results/scorecard.csv beside PCA and DPCA. Also writes results/phase-3/{fdr_by_fault.csv, unseen_fault.csv}
 and figures/{fdr-by-fault-unsupervised.png, unseen-fault.png}. Exits with code 3 if a stop condition fails
 (models.final_check_failures); the scorecard is written first so the numbers can be read.
---charts-only redraws the two charts from results/scorecard.csv and dev_scores.csv without scoring anything.
+--charts-only rewrites the two tables and redraws the two charts from results/scorecard.csv and dev_scores.csv without scoring anything.
 Usage: .venv/Scripts/python scripts/ml_final.py [--charts-only]
 """
 import os
@@ -26,11 +26,10 @@ import psutil  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src import data, evaluate, models, prepare, style  # noqa: E402
+from src import data, evaluate, models, prepare, split, style  # noqa: E402
 
 NORMAL, FAULTY = "TEP_FaultFree_Testing", "TEP_Faulty_Testing"
 OUT = data.RESULTS_3
-SPLIT_FILE = "results/phase-1/run_split.json"
 UNSUPERVISED = ["iforest-l0", "iforest-l2", "ae-l0", "ae-l2"]
 SUPERVISED, UNSEEN = "hgb-l2", "hgb-l2-unseen"
 WIDE_ORDER = ["pca-t2", "pca-spe", "dpca-t2", "dpca-spe"] + UNSUPERVISED + [SUPERVISED, UNSEEN]
@@ -74,6 +73,16 @@ def wide_table(scorecard):
     return table, fdr
 
 
+def write_tables(scorecard):
+    """fdr_by_fault.csv and unseen_fault.csv from the scorecard, each with a `machine` column. Returns (FDR table, unseen table)."""
+    table, fdr = wide_table(scorecard)
+    machine = "; ".join(sorted(scorecard[scorecard.model.isin(table.columns)]["machine"].unique()))
+    table.assign(machine=machine).to_csv(OUT / "fdr_by_fault.csv")
+    unseen_table = fdr.loc[list(models.UNSEEN_FAULTS), [UNSEEN, SUPERVISED, "pca-spe"]]
+    unseen_table.assign(machine=machine).to_csv(OUT / "unseen_fault.csv")
+    return fdr, unseen_table
+
+
 def dot_plot(fdr, series, title, path, figsize, colours, title_size=14):
     """One row per fault, one dot per model (`series` = [(column, label)]), a grey bar from the lowest to the highest."""
     faults = list(fdr.index)
@@ -115,13 +124,13 @@ def plot_unseen(unseen_table, path):
 
 
 def charts_only():
-    """Redraw the charts from the saved scorecard (no model is loaded or scored)."""
+    """Rewrite the two tables and redraw the charts from the saved scorecard (no model is loaded or scored)."""
     scorecard = pd.read_csv(evaluate.DEFAULT_SCORECARD, dtype={"model": str, "limit_name": str})
-    _, fdr = wide_table(scorecard)
+    fdr, unseen_table = write_tables(scorecard)
     dev = pd.read_csv(OUT / "dev_scores.csv")
     plot_unsupervised(fdr, best_by_dev(dev, "iforest"), best_by_dev(dev, "ae"),
                       OUT / "figures" / "fdr-by-fault-unsupervised.png")
-    plot_unseen(fdr.loc[list(models.UNSEEN_FAULTS), [UNSEEN, SUPERVISED, "pca-spe"]], OUT / "figures" / "unseen-fault.png")
+    plot_unseen(unseen_table, OUT / "figures" / "unseen-fault.png")
 
 
 def main():
@@ -157,18 +166,14 @@ def main():
     rows = []
     for n in names:
         rows += models.scorecard_rows(monitors[n], faulty[n], normal[n], onset, after=onset, machine=machine,
-                                      split_file=SPLIT_FILE, train_time_s=monitors[n].meta["train_time_s"],
+                                      split_file=split.SPLIT_FILE, train_time_s=monitors[n].meta["train_time_s"],
                                       peak_ram_gb=peak)
     evaluate.write_scorecard(rows, evaluate.DEFAULT_SCORECARD)
     ours = pd.DataFrame(rows)
 
     # --- derived files ----------------------------------------------------------------------------------------------------
     scorecard = pd.read_csv(evaluate.DEFAULT_SCORECARD, dtype={"model": str, "limit_name": str})
-    table, fdr = wide_table(scorecard)
-    table.to_csv(OUT / "fdr_by_fault.csv")
-    unseen_faults = list(models.UNSEEN_FAULTS)
-    unseen_table = fdr.loc[unseen_faults, [UNSEEN, SUPERVISED, "pca-spe"]]
-    unseen_table.to_csv(OUT / "unseen_fault.csv")
+    fdr, unseen_table = write_tables(scorecard)
 
     # --- checks and print ---------------------------------------------------------------------------------------------------------
     one = ours[ours.limit_name == "1%"]

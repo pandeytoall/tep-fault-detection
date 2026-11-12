@@ -16,6 +16,7 @@ N_RUNS = 500
 SIZES = {"fit": 330, "limit": 100, "supervised": 50, "dev": 20}
 N_LIMIT_TUNE = 50  # inside `limit`; also tunes the supervised model
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "results" / "phase-1" / "run_split.json"
+SPLIT_FILE = "results/phase-1/run_split.json"  # the label every results file records for the split it used
 
 
 def make_split():

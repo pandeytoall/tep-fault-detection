@@ -408,3 +408,46 @@ def test_final_checks_want_the_unseen_model_worse_on_most_unseen_faults():
     df = _scorecard({"hgb-l2": _fdrs(), "hgb-l2-unseen": bad}, {"hgb-l2": 0.01, "hgb-l2-unseen": 0.01})
     notes = models.final_check_failures(df, [], ["hgb-l2"], unseen="hgb-l2-unseen")[1]
     assert any("unseen" in n for n in notes)
+
+
+# --- the supervised tuning grid --------------------------------------------------------------------------------------
+TINY_GRID = {"learning_rate": (0.1,), "max_leaf_nodes": (4,), "max_iter": (3, 6)}
+
+
+def tuning_frames(dev_shift=True):
+    faulty, normal = supervised_data(run_ids=range(1, 7))                       # `supervised` runs
+    tune_normal = runs(range(101, 104), seed=21, flip=True)                                  # `limit_tune` runs
+    dev_faulty = pd.concat([runs(range(201, 204), f, seed=40 + f, shift=shifted(f) if dev_shift else None)
+                            for f in (1, 2, 3)], ignore_index=True)               # `dev` runs
+    dev_normal = runs(range(201, 204), seed=22)
+    return models.supervised_frame(faulty, normal), tune_normal, dev_faulty, dev_normal
+
+
+def test_tuning_takes_each_limit_from_the_limit_tune_runs_and_scores_only_the_dev_runs():
+    train, tune_normal, dev_faulty, dev_normal = tuning_frames()
+    grid, fits = models.tune_hgb(train, MEAN, STD, 2, tune_normal, dev_faulty, dev_normal, ONSET, "test machine",
+                                 grid=TINY_GRID, stride=1, variables=VARS)
+    assert list(grid["max_iter"]) == [3, 6] and sorted(fits) == [0, 1]
+    assert list(grid["total_trees"]) == [3 * 21, 6 * 21] and set(grid["machine"]) == {"test machine"}
+    for i, row in grid.iterrows():
+        model = fits[i]
+        limit = evaluate.limit_for_far(model.score(tune_normal)["alarm"], 0.01)
+        assert row["limit_1pct_limit_tune"] == limit                              # not from dev_normal or the training runs
+        assert limit != evaluate.limit_for_far(model.score(dev_normal)["alarm"], 0.01)
+        dev_scores = model.score(dev_faulty)
+        f = dev_scores[["faultNumber", "simulationRun", "sample"]].assign(score=dev_scores["alarm"].to_numpy())
+        per_fault = evaluate.fdr(f, limit, ONSET, model.lags)
+        assert row["dev_mean_fdr"] == pytest.approx(per_fault.mean())
+        assert row["dev_mean_fdr_excl_3_9_15"] == pytest.approx(per_fault.drop([3]).mean())   # 3/9/15 left out of the choice
+        assert row["dev_far"] == pytest.approx((model.score(dev_normal)["alarm"] > limit).mean())
+        assert model.meta["train_runs"] == list(range(1, 7))                       # no limit_tune or dev run in the fit
+
+
+def test_tuning_scores_change_with_the_dev_runs_only():
+    train, tune_normal, dev_faulty, dev_normal = tuning_frames()
+    same_fit = dict(grid=TINY_GRID, stride=1, variables=VARS)
+    shifted_dev, _ = models.tune_hgb(train, MEAN, STD, 2, tune_normal, dev_faulty, dev_normal, ONSET, "m", **same_fit)
+    _, _, flat_dev_faulty, _ = tuning_frames(dev_shift=False)
+    flat_dev, _ = models.tune_hgb(train, MEAN, STD, 2, tune_normal, flat_dev_faulty, dev_normal, ONSET, "m", **same_fit)
+    assert (shifted_dev["limit_1pct_limit_tune"] == flat_dev["limit_1pct_limit_tune"]).all()
+    assert (shifted_dev["dev_mean_fdr_excl_3_9_15"] > flat_dev["dev_mean_fdr_excl_3_9_15"] + 0.3).all()

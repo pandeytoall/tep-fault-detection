@@ -13,7 +13,6 @@ import os
 
 os.environ.setdefault("OMP_NUM_THREADS", "6")  # HistGradientBoosting ignores n_jobs; cap its threads
 
-import itertools  # noqa: E402
 import json  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
@@ -29,42 +28,8 @@ from src import data, evaluate, models, mspc, prepare, split  # noqa: E402
 
 NORMAL, FAULTY = "TEP_FaultFree_Training", "TEP_Faulty_Training"
 OUT = data.RESULTS_3
-SPLIT_FILE = "results/phase-1/run_split.json"
-DPCA_MODEL = data.ROOT / "results" / "phase-2" / "dpca.npz"
-GRID = {"learning_rate": (0.05, 0.1), "max_leaf_nodes": (31, 63), "max_iter": (200, 400)}
+DPCA_MODEL = data.RESULTS_2 / "dpca.npz"
 SHOWN_FAULTS = (1, 2, 4, 6, 7, 3, 9, 15)
-N_CLASSES = 21
-# Compute budget: a full-row HGB fit takes about 6 s per boosting iteration (21 classes, 156 features, 525k rows), which makes the
-# 8-fit grid about 4.5 h. Every supervised run stays in; only every HGB_STRIDE-th sample of each run is used for fitting
-# (the lag features are built before thinning). Scoring, limits and dev tuning scores use all rows.
-HGB_STRIDE = 3
-
-
-def dev_fdr_excl_hard(model, limit, dev_faulty, onset):
-    """(mean FDR excluding 3/9/15, mean FDR over all 20) of a scored model at one limit, on the dev faulty runs."""
-    scores = model.score(dev_faulty)
-    f = scores[data.ID_COLUMNS].assign(score=scores["alarm"].to_numpy())
-    fdr = evaluate.fdr(f, limit, onset, model.lags)
-    return float(fdr.drop(list(evaluate.HARD_FAULTS)).mean()), float(fdr.mean())
-
-
-def tune_hgb(train, mean, std, lags, tune_normal, dev_faulty, dev_normal, onset, machine):
-    """Fit the 8 grid points. Returns (grid DataFrame, {row index: fitted model}). Each fit: 1% limit from `limit_tune`."""
-    rows, fits = [], {}
-    for lr, leaves, n_iter in itertools.product(*GRID.values()):
-        model = models.HGBMonitor(mean, std, lags=lags)
-        model.fit(train, onset=onset, learning_rate=lr, max_leaf_nodes=leaves, max_iter=n_iter, stride=HGB_STRIDE)
-        limit = evaluate.limit_for_far(model.score(tune_normal)["alarm"], 0.01)
-        excl, full = dev_fdr_excl_hard(model, limit, dev_faulty, onset)
-        dev_far = float((model.score(dev_normal)["alarm"] > limit).mean())
-        rows.append({"learning_rate": lr, "max_leaf_nodes": leaves, "max_iter": n_iter, "total_trees": n_iter * N_CLASSES,
-                     "row_stride": HGB_STRIDE, "n_train_rows": model.meta["n_train_rows"],
-                     "fit_time_s": model.meta["train_time_s"], "limit_1pct_limit_tune": limit,
-                     "dev_mean_fdr_excl_3_9_15": excl, "dev_mean_fdr": full, "dev_far": dev_far, "machine": machine})
-        fits[len(rows) - 1] = model
-        print(f"  grid lr {lr} leaves {leaves} iter {n_iter}: dev mean FDR excl 3/9/15 {excl:.4f}, all {full:.4f}, "
-              f"dev FAR {dev_far:.4f}, fit {model.meta['train_time_s']:.0f} s", flush=True)
-    return pd.DataFrame(rows), fits
 
 
 def main():
@@ -106,7 +71,7 @@ def main():
     dev_faulty, dev_normal = data.load_runs(FAULTY, ids("dev")), data.load_runs(NORMAL, ids("dev"))
     assert sorted(dev_faulty["faultNumber"].unique()) == list(range(1, 21))
     t_grid = time.perf_counter()
-    grid, fits = tune_hgb(train, mean, std, lag, tune_normal, dev_faulty, dev_normal, onset, machine)
+    grid, fits = models.tune_hgb(train, mean, std, lag, tune_normal, dev_faulty, dev_normal, onset, machine)
     grid_time = time.perf_counter() - t_grid
     chosen = models.pick_hgb(grid)
     index = grid.index[(grid[list(chosen)] == pd.Series(chosen)).all(axis=1)][0]
@@ -141,13 +106,13 @@ def main():
                         "limits": m.limits, "n_train_runs": len(m.meta["train_runs"]),
                         "n_val_runs": len(m.meta.get("val_runs", [])), "train_time_s": m.meta["train_time_s"]})
     del limit_runs
-    (OUT / "models.json").write_text(json.dumps({"machine": machine, "split_file": SPLIT_FILE, "models": records}, indent=1))
+    (OUT / "models.json").write_text(json.dumps({"machine": machine, "split_file": split.SPLIT_FILE, "models": records}, indent=1))
 
     # --- score the dev runs ---------------------------------------------------------------------------------------------------
     rows = []
     for name, m in fitted.items():
         rows += models.scorecard_rows(m, m.score(dev_faulty), m.score(dev_normal), onset, machine=machine,
-                                      split_file=SPLIT_FILE, train_time_s=m.meta["train_time_s"],
+                                      split_file=split.SPLIT_FILE, train_time_s=m.meta["train_time_s"],
                                       peak_ram_gb=prepare.peak_ram_gb())
     (OUT / "dev_scores.csv").unlink(missing_ok=True)
     evaluate.write_scorecard(rows, OUT / "dev_scores.csv")

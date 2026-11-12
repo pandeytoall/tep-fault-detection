@@ -8,6 +8,7 @@ Same small interface as mspc.PCAMonitor: `fit`, `score` (ID columns plus an `ala
 - Frames hold faultNumber, simulationRun, sample plus the variable columns, as everywhere else.
 """
 import hashlib
+import itertools
 import time
 
 import joblib
@@ -29,6 +30,12 @@ TRAINING_ONSET = ONSET["Training"]
 UNSEEN_FAULTS = (1, 8, 13, 14, 16)
 ASSISTANT_MODELS = ("iforest-l0", "iforest-l2", "ae-l0", "ae-l2", "hgb-l2")
 N_JOBS = 6
+GRID = {"learning_rate": (0.05, 0.1), "max_leaf_nodes": (31, 63), "max_iter": (200, 400)}
+N_CLASSES = 21
+# Compute budget: a full-row HGB fit takes about 6 s per boosting iteration (21 classes, 156 features, 525k rows), which makes the
+# 8-fit grid about 4.5 h. Every supervised run stays in; only every HGB_STRIDE-th sample of each run is used for fitting
+# (the lag features are built before thinning). Scoring, limits and dev tuning scores use all rows.
+HGB_STRIDE = 3
 
 
 def sha256_file(path, chunk=1 << 20):
@@ -291,6 +298,39 @@ def load(path):
     return monitor
 
 
+# --- tuning the supervised model (phase 3) --------------------------------------------------------------------------------
+def dev_fdr_excl_hard(model, limit, dev_faulty, onset):
+    """(mean FDR excluding 3/9/15, mean FDR over all faults) of a scored model at one limit, on the dev faulty runs."""
+    scores = model.score(dev_faulty)
+    f = scores[ID_COLUMNS].assign(score=scores["alarm"].to_numpy())
+    fdr = evaluate.fdr(f, limit, onset, model.lags)
+    return float(fdr.drop(list(evaluate.HARD_FAULTS), errors="ignore").mean()), float(fdr.mean())
+
+
+def tune_hgb(train, mean, std, lags, tune_normal, dev_faulty, dev_normal, onset, machine, grid=None, stride=HGB_STRIDE,
+             variables=None):
+    """Fit every point of the grid (default GRID: 8 fits) on `train` (the `supervised` runs).
+
+    Each fit gets its 1% limit from `tune_normal` (the `limit_tune` runs) and is scored on `dev_faulty` / `dev_normal` only.
+    Returns (grid DataFrame, {row index: fitted model}).
+    """
+    rows, fits = [], {}
+    for lr, leaves, n_iter in itertools.product(*(grid or GRID).values()):
+        model = HGBMonitor(mean, std, lags=lags, variables=variables)
+        model.fit(train, onset=onset, learning_rate=lr, max_leaf_nodes=leaves, max_iter=n_iter, stride=stride)
+        limit = evaluate.limit_for_far(model.score(tune_normal)["alarm"], 0.01)
+        excl, full = dev_fdr_excl_hard(model, limit, dev_faulty, onset)
+        dev_far = float((model.score(dev_normal)["alarm"] > limit).mean())
+        rows.append({"learning_rate": lr, "max_leaf_nodes": leaves, "max_iter": n_iter, "total_trees": n_iter * N_CLASSES,
+                     "row_stride": stride, "n_train_rows": model.meta["n_train_rows"],
+                     "fit_time_s": model.meta["train_time_s"], "limit_1pct_limit_tune": limit,
+                     "dev_mean_fdr_excl_3_9_15": excl, "dev_mean_fdr": full, "dev_far": dev_far, "machine": machine})
+        fits[len(rows) - 1] = model
+        print(f"  grid lr {lr} leaves {leaves} iter {n_iter}: dev mean FDR excl 3/9/15 {excl:.4f}, all {full:.4f}, "
+              f"dev FAR {dev_far:.4f}, fit {model.meta['train_time_s']:.0f} s", flush=True)
+    return pd.DataFrame(rows), fits
+
+
 # --- checks and the scorecard --------------------------------------------------------------------------------
 _RUN_KEYS = {"iforest": (("train_runs", "fit"),), "ae": (("train_runs", "fit"), ("val_runs", "fit")),
              "hgb": (("train_runs", "supervised"),)}
@@ -343,18 +383,9 @@ def final_check_failures(df, unsupervised, supervised, unseen=None):
     stops, notes = [], []
     every = list(unsupervised) + list(supervised) + ([unseen] if unseen else [])
     for limit_name in df["limit_name"].unique():
-        sel = df[df["limit_name"] == limit_name]
-        far = sel[sel["metric"] == "far"].set_index("model")["value"]
-        fdr = sel[sel["metric"] == "fdr"].pivot(index="fault", columns="model", values="value")
-        window = mspc.FAR_WINDOWS.get(limit_name)
-        for m in every:
-            if window and not window[0] <= far[m] <= window[1]:
-                notes.append(f"FAR out of range: {m} at {limit_name} = {far[m]:.4f}, expected {window}")
-        for m in unsupervised:
-            worst = fdr.loc[list(evaluate.HARD_FAULTS), m].max()
-            bound = mspc.LEAK_BOUND_1PCT if limit_name == "1%" else far[m] + 0.05
-            if worst > bound:
-                stops.append(f"LEAK? {m} at {limit_name}: max FDR on 3/9/15 = {worst:.3f} > {bound:.3f}")
+        far, fdr = mspc.limit_tables(df, limit_name)
+        notes += [p for m in every if (p := mspc.far_problem(far, m, limit_name))]
+        stops += [p for m in unsupervised if (p := mspc.leak_problem(far, fdr, m, limit_name))]
         if limit_name != "1%":
             continue
         for m in list(supervised) + ([unseen] if unseen else []):

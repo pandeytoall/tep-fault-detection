@@ -95,3 +95,7 @@ def test_no_testing_run_matches_any_training_run_on_samples_1_to_20():
     assert not rows(train) & rows(test)      # no shared sample
     assert not blocks(train) & blocks(test)  # no shared 20-sample block (all 500 x 500 pairs)
     assert len(blocks(train)) == 500         # sanity: training blocks are all different from each other
+
+
+def test_split_file_label_is_the_saved_split_path_relative_to_the_project_root():
+    assert split.SPLIT_FILE == split.DEFAULT_PATH.relative_to(data.ROOT).as_posix()
