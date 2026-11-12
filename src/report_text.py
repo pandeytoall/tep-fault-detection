@@ -7,7 +7,7 @@ import pandas as pd
 
 from src import report
 from src.operator_report import SHUTDOWN
-from src.report import fmt_fdr, fmt_gb, fmt_seconds, fmt_share, md_table
+from src.report import fmt_fdr, fmt_seconds, fmt_share, md_table
 
 FIGURES = "figures/detection-by-family.png"
 PHASE_FIGURES = {
@@ -57,9 +57,21 @@ def _hard_max(row):
 
 
 # --- the opening: what to take from it ---------------------------------------------------------------------------------------
+def _every(stride):
+    """'every 3rd row' for stride 3 (ordinal from the number)."""
+    suffix = "th" if 10 <= stride % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(stride % 10, "th")
+    return f"every {stride}{suffix} row"
+
+
+def _stride(inp):
+    return int(inp["hgb_tuning"]["row_stride"].iloc[0])
+
+
 def findings(inp):
     """The five bullets, as a list of strings (kept separate so the build report can quote them)."""
     rows = _rows(inp)
+    stride = _stride(inp)
+    every = _every(stride)
     unsup = {n: r for n, r in rows.items() if report.MODELS[n][1] == "unsupervised"}
     excl = {n: r["mean_fdr_excl_3_9_15"] for n, r in unsup.items()}
     best = max(excl, key=excl.get)
@@ -80,7 +92,7 @@ def findings(inp):
         (f"**Detection at a 1% false-alarm limit.** The unsupervised models (they learn from normal runs only) flag "
          f"{_f(min(excl.values()))} to {_f(max(excl.values()))} of post-onset samples on average without faults 3, 9, 15; "
          f"{_label(best)} is highest ({_f(excl[best])}) and PCA SPE, the reference, reaches {_f(excl['pca-spe'])}. Gradient boosting, "
-         f"the supervised model (it also learns from labelled faults), reaches {_f(hgb['mean_fdr_excl_3_9_15'])}. The two tracks have "
+         f"the supervised model (it also learns from labelled faults; trained on {every} (stride {stride}) and tuned on dev runs of all 20 faults), reaches {_f(hgb['mean_fdr_excl_3_9_15'])}. The two tracks have "
          f"separate tables and are not ranked against each other. The top four unsupervised models sit within "
          f"{_f(sorted(excl.values())[-1] - sorted(excl.values())[-4])} of each other on one seed-42 split, so we call no winner among them."),
         (f"**Faults 3, 9 and 15 are not detected by any model.** Every model flags at most {_f(worst_hard)} of their post-onset samples, "
@@ -182,6 +194,7 @@ def section_detection(inp):
     tuning = inp["hgb_tuning"]
     degenerate = int((tuning["limit_1pct_limit_tune"] >= 0.9999).sum())
     stride = int(tuning["row_stride"].iloc[0])
+    every = _every(stride)
     pca_t2, pca_spe = rows["pca-t2"], rows["pca-spe"]
     textbook_far = report.model_row(inp["scorecard"], "dpca-spe", "99% textbook")["far"]
     streak = {n: rows[n]["sustained_rate"] for n in ("dpca-t2", "iforest-l0", "iforest-l2", "hgb-l2")}
@@ -212,11 +225,11 @@ Peak RAM is for the whole script that scored the model, not for the model alone.
 - False-alarm streaks: the per-sample FAR is about 1% for every model, but alarms come in runs. The share of fault-free runs with a 3-in-a-row alarm after sample 160 is {fmt_share(streak['dpca-t2'])} for DPCA T², {fmt_share(streak['iforest-l0'])} to {fmt_share(streak['iforest-l2'])} for Isolation Forest and {fmt_share(streak['hgb-l2'])} for gradient boosting, against {fmt_share(pca_spe['sustained_rate'])} for PCA SPE. A detection delay from a model with a high streak rate is therefore less trustworthy, and a run is easily "detected" by chance.
 - Faults 3, 9, 15 are not detected. The highest FDR on any of them is {fmt_fdr(max(_hard_max(r) for r in rows.values()))}, against FARs near 0.01. For PCA T², {fmt_share(1 - pca_t2['never'][3])} of fault-3 runs show a sustained alarm after the onset, and {fmt_share(pca_t2['sustained_rate'])} of fault-free runs do. Gradient boosting's FDR on them ({fmt_fdr(hgb['fdr'][3])}, {fmt_fdr(hgb['fdr'][9])}, {fmt_fdr(hgb['fdr'][15])}) is a little above its FAR ({fmt_fdr(hgb['far'])}) and still nowhere near a detection; the phase 3 leak audit found no leak.
 
-**Caveats for the supervised row.** Gradient boosting was fitted on every 3rd row (row stride {stride}, all 50 supervised runs kept) to keep the tuning grid short; scoring, limits and tuning scores use every row. Its tuning used the development runs of all 20 faults. {degenerate} of the {len(tuning)} grid fits are degenerate (their 1% limit saturates at 1.0, so FDR reads about 0) and the selection rule discarded them. The train time ({fmt_seconds(hgb['train_time_s'])}) is one fit; the whole grid took {_f(tuning['fit_time_s'].sum(), 0)} s. A published unsupervised DPCA variant reaches a mean of 0.951 on 18 faults without 3, 9, 15 on the Braatz data (computed from `research/pca-anchors.md`), so {_f(hgb['mean_fdr_excl_3_9_15'], 2)} is not extraordinary.
+**Caveats for the supervised row.** Gradient boosting was fitted on {every} (stride {stride}, all 50 supervised runs kept) to keep the tuning grid short; scoring, limits and tuning scores use every row. Its tuning used the development runs of all 20 faults. {degenerate} of the {len(tuning)} grid fits are degenerate (their 1% limit saturates at 1.0, so FDR reads about 0) and the selection rule discarded them. The train time ({fmt_seconds(hgb['train_time_s'])}) is one fit; the whole grid took {_f(tuning['fit_time_s'].sum(), 0)} s. Published supervised and unsupervised results near 0.9 or higher on the easy faults exist (hand-added from a published table in `research/pca-anchors.md`, not recomputed in code; the published table has 21 faults, ours 17 without 3, 9, 15), so a high mean on the easy faults is not unusual.
 
 Earlier figures that already show this: [PCA and DPCA per fault](../phase-2/figures/fdr-by-fault.png), [PCA SPE, Isolation Forest and autoencoder per fault](../phase-3/figures/fdr-by-fault-unsupervised.png).
 
-{src('scorecard.csv', 'phase-3/hgb_tuning.csv', 'phase-3/models.json')} Plus `research/pca-anchors.md` for the 0.951.
+{src('scorecard.csv', 'phase-3/hgb_tuning.csv', 'phase-3/models.json')} Plus `research/pca-anchors.md` for the published-results remark.
 """
 
 
@@ -250,6 +263,8 @@ Rato and Reis (2013) report FDR per fault for PCA and DPCA at a 1% false-alarm l
 # --- unseen -----------------------------------------------------------------------------------------------------------------------
 def section_unseen(inp):
     us = report.unseen_summary(inp["unseen"])
+    stride = _stride(inp)
+    every = _every(stride)
     table = report.unseen_table(inp["unseen"])
     others = us["mean_without_carrier"]
     return f"""## The unseen-fault test
@@ -258,9 +273,11 @@ The supervised model was retrained once without faults 1, 8, 13, 14 and 16 (the 
 
 {md_table(table)}
 
+The last column is the comparison the spec asked for (unseen supervised against PCA SPE on the five faults); it is not a ranking of the two tracks.
+
 - Without labels for them the supervised model flags {_f(us['mean']['hgb-l2-unseen'])} of samples on these five, against {_f(us['mean']['hgb-l2'])} when it saw them and {_f(us['mean']['pca-spe'])} for PCA SPE.
-- **Fault 16 carries the gap.** It holds {fmt_share(us['carrier_share'])} of the unseen model's lead over PCA SPE. On faults 1, 8, 13 and 14 the two are within {_f(us['max_gap_others'])} of each other. Without fault 16 the means are {_f(others['hgb-l2-unseen'])} (unseen) and {_f(others['pca-spe'])} (PCA SPE). Fault 14 is the other one labels clearly help: the unseen model drops from {_f(inp['unseen'].set_index('fault').loc[14, 'hgb-l2'])} to {_f(inp['unseen'].set_index('fault').loc[14, 'hgb-l2-unseen'])}, no better than PCA SPE.
-- Caveats. The unseen model reuses the full model's settings, which were tuned with all 20 faults, including these five, so this test is mildly optimistic for the unseen model. Both supervised models are fitted on every 3rd row. It is one seed-42 split with one retrain, so there is no interval on these numbers. Fault 16's cause is unknown (Downs and Vogel give no description).
+- **Fault 16 carries the gap.** It holds {fmt_share(us['carrier_share'])} of the gap between the unseen model and PCA SPE. On faults 1, 8, 13 and 14 the two are within {_f(us['max_gap_others'])} of each other. Without fault 16 the means are {_f(others['hgb-l2-unseen'])} (unseen) and {_f(others['pca-spe'])} (PCA SPE). Fault 14 is the other one labels clearly help: the unseen model drops from {_f(inp['unseen'].set_index('fault').loc[14, 'hgb-l2'])} to {_f(inp['unseen'].set_index('fault').loc[14, 'hgb-l2-unseen'])}, no better than PCA SPE.
+- Caveats. The unseen model reuses the full model's settings, which were tuned with all 20 faults, including these five, so this test is mildly optimistic for the unseen model. Both supervised models are fitted on {every} (stride {stride}). It is one seed-42 split with one retrain, so there is no interval on these numbers. Fault 16's cause is unknown (Downs and Vogel give no description).
 
 ![Unseen-fault test: supervised model with and without the five faults, and PCA SPE](../phase-3/figures/unseen-fault.png)
 
@@ -347,13 +364,13 @@ The other {20 - len(reached)} faults have no run that reaches it. Among the 12 d
 
 {miss_lines}
 
-These are results about contribution plots (symptoms, not causes), not a fault in the method.
+We read these as results about contribution plots (symptoms, not causes); we did not test other explanations.
 
 **Why faults 3, 9 and 15 hide.** Inside one run, we compare the 160 samples before the fault start with the 800 after, on three statistics: the largest shift of any reading (in standard deviations of normal runs), the largest change in spread and the largest change in autocorrelation. The control is 100 fault-free testing runs that share no noise stream with the faulty ones.
 
 {md_table(report.hidden_table(inp['test_hidden'], [0, 3, 9, 15, 14, 19]))}
 
-- Faults 3, 9, 15 sit at the control on all three: shift {_f(hidden.loc[hard, 'median_max_abs_shift'].min(), 2)} to {_f(hidden.loc[hard, 'median_max_abs_shift'].max(), 2)} against {_f(ctrl['median_max_abs_shift'], 2)}; spread {_f(spread.min(), 2)} to {_f(spread.max(), 2)} against {_f(ctrl['median_max_spread_ratio'], 2)}; autocorrelation {_f(dacf.min(), 2)} to {_f(dacf.max(), 2)} against {_f(ctrl['median_max_abs_dacf'], 2)}. There is no change inside the run for any monitor to find, and their blame hit rates ({_f(hb.loc[3, 'top5_hit'], 2)}, {_f(hb.loc[9, 'top5_hit'], 2)}, {_f(hb.loc[15, 'top5_hit'], 2)}) are near chance and mean nothing.
+- Faults 3, 9, 15 sit at the control on all three: shift {_f(hidden.loc[hard, 'median_max_abs_shift'].min(), 2)} to {_f(hidden.loc[hard, 'median_max_abs_shift'].max(), 2)} against {_f(ctrl['median_max_abs_shift'], 2)}; spread {_f(spread.min(), 2)} to {_f(spread.max(), 2)} against {_f(ctrl['median_max_spread_ratio'], 2)}; autocorrelation {_f(dacf.min(), 2)} to {_f(dacf.max(), 2)} against {_f(ctrl['median_max_abs_dacf'], 2)}. None of the three statistics we tested (mean shift, spread, autocorrelation) shows a change inside the run, and their blame hit rates ({_f(hb.loc[3, 'top5_hit'], 2)}, {_f(hb.loc[9, 'top5_hit'], 2)}, {_f(hb.loc[15, 'top5_hit'], 2)}) are near chance and mean nothing.
 - Caution: the headline check is mean shift, and faults {', '.join(map(str, like))} also match the control on it. Faults 14 and 19 are the clearest example: fault 14 is easy to detect and shows no mean shift ({_f(hidden.loc[14, 'median_max_abs_shift'], 2)} sd), but its spread ratio is {_f(hidden.loc[14, 'median_max_spread_ratio'], 2)} against {_f(ctrl['median_max_spread_ratio'], 2)}. So mean shift alone proves nothing; for 3, 9, 15 all three statistics are at the control level, and that is what supports "hidden".
 
 ![Largest change in any reading per fault](../phase-4/figures/hidden-faults.png)
@@ -389,7 +406,7 @@ The assistant is Claude with one tool server that reads a replayed plant history
 
 - **Read v1.1 for what it is.** v1.1 adds `classify_fault`, a supervised closed-set classifier (gradient boosting trained on faults 1-20 plus normal). All {used} of {sessions} v1.1 test sessions used it, so there is no with-and-without comparison. The gain from {int(head['v1_k'])} to {int(head['v1.1_k'])} of {int(head['v1_n'])} is "a trained classifier helps", not better reasoning, and v1.1 is not a reasoning-only score.
 - **Wide intervals.** With {int(head['v1_n'])} headline cases the 95% intervals above are wide. The intervals for v1 and v1.1 {overlap}, and each fault has only three cases.
-- **Baselines.** The no-LLM baseline ({int(cmp.loc['baseline', 'v1_k'])} of {int(cmp.loc['baseline', 'v1_n'])}: unit of the top SPE reading) is below chance ({int(cmp.loc['chance', 'v1_k'])} of {int(cmp.loc['chance', 'v1_n'])}: always the most common unit), so the SPE reading alone is a poor guide to the plant area.
+- **Baselines.** The no-LLM baseline ({int(cmp.loc['baseline', 'v1_k'])} of {int(cmp.loc['baseline', 'v1_n'])}: unit of the top SPE reading) is not above chance ({int(cmp.loc['baseline', 'v1_k'])}/{int(cmp.loc['baseline', 'v1_n'])} against {int(cmp.loc['chance', 'v1_k'])}/{int(cmp.loc['chance', 'v1_n'])} for always naming the most common unit; within noise at {int(cmp.loc['chance', 'v1_n'])} cases), so the SPE reading alone is not a useful guide to the plant area.
 - **Faults 3, 9, 15.** The assistant answered "normal" or "can't tell" on all {int(cmp.loc['hard', 'v1_n'])}. That is the right answer for a fault with no visible change, and it is not a detection.
 - **Repeats.** {n1} cases were run {repeats} times. v1: {k1} of {n1} cases agree on status and plant area; v1.1: {k11} of {n11}. Headline numbers use the first run of each case.
 - **Cost.** {'; '.join(costs)} (API-equivalent cost reported by the CLI).
@@ -404,6 +421,7 @@ def section_limits(inp):
     rows = _rows(inp)
     tuning = inp["hgb_tuning"]
     stride = int(tuning["row_stride"].iloc[0])
+    every = _every(stride)
     degenerate = int((tuning["limit_1pct_limit_tune"] >= 0.9999).sum())
     perm_h = inp["dev_blame"]["runtime_s"].iloc[0] / 3600
     cmp = inp["assistant_cmp"].set_index("metric")
@@ -412,7 +430,7 @@ def section_limits(inp):
 
 - **One seed-42 split.** One partition of the run numbers, one fit per model, no repeat over splits. No detection number has an interval; differences of a few points between models are not findings.
 - **Rieth data, not Braatz data.** Most papers use the original Braatz data (one run per fault). Same faults, different noise and run counts, so compare patterns, not exact percentages.
-- **Gradient boosting stride.** Fitted on every 3rd row (stride {stride}) to keep the grid short. {degenerate} of {len(tuning)} grid fits are degenerate (limit saturates at 1.0) and discarded by the rule. It was tuned with all 20 faults, so the unseen-fault test is mildly optimistic.
+- **Gradient boosting stride.** Fitted on {every} (stride {stride}) to keep the grid short. {degenerate} of {len(tuning)} grid fits are degenerate (limit saturates at 1.0) and discarded by the rule. It was tuned with all 20 faults, so the unseen-fault test is mildly optimistic.
 - **Few assistant cases.** 36 headline cases give wide intervals (v1: {_f(lo, 2)} to {_f(hi, 2)}). Claude may remember the TEP papers. v1.1 includes a supervised classifier.
 - **Pressure tail.** Whole-window blame for fault 6 is dominated by samples after reactor pressure reaches about 3000 kPa ({SHUTDOWN}); first-hour numbers are the fairer view. Faults 12, 13 and 18 reach it too (see the Diagnosis section).
 - **Permutation importance.** One dev vector per fault, every 5th post-onset sample, one process; the pass took about {perm_h:.0f} hours, over the guide, and was not rerun.
@@ -450,7 +468,7 @@ Run from the project folder, in this order. Python is the project venv.
 def readme_text():
     return """# Phase 5: reports
 
-Four files and a folder, all generated by one script from saved results files. Do not edit them by hand.
+Everything in this folder is generated by one script from saved results files. Do not edit it by hand.
 
 | File | What it is |
 |---|---|
@@ -473,7 +491,7 @@ One command. It overwrites this folder, and records runtime, peak RAM and machin
 |---|---|
 | What this is and what to take from it | all of the files below |
 | Data and rules | `phase-1/run_split.json`, `phase-2/lag_choice.csv`, `phase-2/pca.npz` |
-| Detection | `scorecard.csv`, `phase-3/hgb_tuning.csv`, `phase-3/models.json`; `research/pca-anchors.md` for one published mean |
+| Detection | `scorecard.csv`, `phase-3/hgb_tuning.csv`, `phase-3/models.json`; `research/pca-anchors.md` for the published-results remark |
 | Against the literature | `phase-2/vs_literature.csv`, `scorecard.csv`, `phase-2/pca.npz`, `phase-2/dpca.npz` |
 | The unseen-fault test | `phase-3/unseen_fault.csv` |
 | Diagnosis | `phase-4/test_blame.csv`, `phase-4/dev_blame.csv`, `phase-4/test_hidden.csv`, `report/pressure_tail.csv` (from the testing parquet) |

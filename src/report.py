@@ -43,11 +43,13 @@ def fmt_share(value):
 
 
 def fmt_delay(median_min, never_share):
-    """'24 min (0% never)': median delay over detected runs and the share of runs never detected."""
-    never = f"{fmt_share(never_share)} never"
+    """'24 min (0% never)': median delay over detected runs and the share of runs never detected. When 95% or more of the runs
+    are never detected the shares get one decimal (so 99.6% is not shown as 100%) and the delay is labelled as over the few detected."""
     if _missing(median_min):
-        return f"none detected ({never})"
-    return f"{median_min:.0f} min ({never})"
+        return f"none detected ({fmt_share(never_share)} never)"
+    if 0.95 <= never_share < 1:
+        return f"{median_min:.0f} min over the {(1 - never_share) * 100:.1f}% detected ({never_share * 100:.1f}% never)"
+    return f"{median_min:.0f} min ({fmt_share(never_share)} never)"
 
 
 def fmt_seconds(value):

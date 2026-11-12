@@ -272,9 +272,9 @@ A simulated plant, public Tennessee Eastman data. One testing run of fault {f['f
 
 ## Situation
 
-- The PCA SPE monitor raised its alarm at **{a['t_hours']:.1f} h**: three samples in a row above its 1% limit ({f['limit']:.1f}).
-- The A feed was lost at **{start:.1f} h**. The alarm came **{f['delay_h']:.1f} h ({minutes} minutes)** later.
-- SPE stayed above the limit in {f['share_above_after']:.0%} of the samples after the alarm and peaked at {f['peak_spe']:,.0f}, {f['peak_ratio']:,.0f} times the limit; the alarm {after_alarm}.{stray}
+- Alarm: PCA SPE raised it at **{a['t_hours']:.1f} h** (3 samples in a row above its 1% limit of {f['limit']:.1f}).
+- Fault start **{start:.1f} h**, so the alarm came **{f['delay_h']:.1f} h ({minutes} minutes)** later.
+- After the alarm SPE stayed above the limit in {f['share_above_after']:.0%} of samples (peak {f['peak_ratio']:,.0f} times the limit); it {after_alarm}.
 
 ![PCA SPE over the whole run with the alarm limit, the fault start and the alarm]({FIGURE_RUN})
 
@@ -319,7 +319,7 @@ Top five readings by relative SPE contribution (how much a reading adds to SPE, 
 
 - Run: fault {f['fault']}, simulation run {f['run_id']}, from `data/processed/TEP_Faulty_Testing.parquet` (local data, not in git). Run IDs: [`phase-4/test_runs.json`](../phase-4/test_runs.json).
 - Monitor: the saved PCA model, [`phase-2/pca.npz`](../phase-2/pca.npz) (no lags, 1% SPE limit {f['limit']:.2f}, set on held-back normal training runs).
-- Alarm rule: three samples in a row above the limit; the alarm time is the third. Fault start {start:.1f} h: the first faulty sample is sample {f['onset'] + 1}, stamped {start:.1f} h.
+- Alarm rule: three samples in a row above the limit; the alarm time is the third.{stray} Fault start {start:.1f} h: the first faulty sample is sample {f['onset'] + 1}, stamped {start:.1f} h.
 - Normal band: 3 standard deviations of normal runs from the normal mean, three samples in a row. Normal mean and sd come from the 330 `fit` runs (the PCA scaler).
 - Blame for the 100 testing runs: [`phase-4/test_blame.csv`](../phase-4/test_blame.csv). The readings chosen above: [`phase-4/top_readings_6.csv`](../phase-4/top_readings_6.csv) (development runs). Delay over 500 runs: [`scorecard.csv`](../scorecard.csv).
 - Figures: [`figures/operator-fault6.png`](figures/operator-fault6.png), [`figures/operator-fault6-readings.png`](figures/operator-fault6-readings.png).

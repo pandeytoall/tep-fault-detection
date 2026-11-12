@@ -25,6 +25,12 @@ def test_fmt_delay_shows_median_minutes_and_never_detected_share():
     assert report.fmt_delay(float("nan"), 1.0) == "none detected (100% never)"
 
 
+def test_fmt_delay_with_almost_no_detections_shows_one_decimal_and_says_what_the_delay_is_over():
+    assert report.fmt_delay(876.0, 0.996) == "876 min over the 0.4% detected (99.6% never)"
+    assert "100%" not in report.fmt_delay(876.0, 0.996)
+    assert report.fmt_delay(30.0, 0.949) == "30 min (95% never)"
+
+
 def test_fmt_seconds_keeps_small_values_readable():
     assert report.fmt_seconds(0.678) == "0.7 s"
     assert report.fmt_seconds(903.878) == "904 s"

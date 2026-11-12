@@ -4,7 +4,7 @@
 
 We compared fault-detection models on the public Tennessee Eastman Process (TEP) simulation data, on one scorecard. Everything below was generated from saved results files by `scripts/make_report.py`; every table says where its numbers come from. Five things to take from it:
 
-- **Detection at a 1% false-alarm limit.** The unsupervised models (they learn from normal runs only) flag 0.439 to 0.769 of post-onset samples on average without faults 3, 9, 15; Autoencoder L=2 is highest (0.769) and PCA SPE, the reference, reaches 0.737. Gradient boosting, the supervised model (it also learns from labelled faults), reaches 0.951. The two tracks have separate tables and are not ranked against each other. The top four unsupervised models sit within 0.032 of each other on one seed-42 split, so we call no winner among them.
+- **Detection at a 1% false-alarm limit.** The unsupervised models (they learn from normal runs only) flag 0.439 to 0.769 of post-onset samples on average without faults 3, 9, 15; Autoencoder L=2 is highest (0.769) and PCA SPE, the reference, reaches 0.737. Gradient boosting, the supervised model (it also learns from labelled faults; trained on every 3rd row (stride 3) and tuned on dev runs of all 20 faults), reaches 0.951. The two tracks have separate tables and are not ranked against each other. The top four unsupervised models sit within 0.032 of each other on one seed-42 split, so we call no winner among them.
 - **Faults 3, 9 and 15 are not detected by any model.** Every model flags at most 0.021 of their post-onset samples, against a false-alarm rate of 0.009 to 0.012. Inside one run the readings after the fault start look like the readings before it, exactly as a fault-free run does. This is a result about these data, and the three faults sit at the false-alarm floor, as the literature reports.
 - **Not seeing a fault costs the supervised model most on fault 16.** Retrained without faults 1, 8, 13, 14 and 16, it flags 0.863 of samples on those five, against 0.806 for PCA SPE, which uses no labels. Fault 16 carries 90% of that gap; on the other four the two are within 0.031. The model's settings were tuned with all 20 faults, including these five, so the unseen-fault result is mildly optimistic.
 - **Contribution plots point at symptoms, not causes.** SPE's top five readings include the faulted plant area in 75% of runs over the whole post-onset window and 77% in the first hour, random picking in 61%; T² is no better than random. For fault 6 (A feed loss) a feed reading (the A feed or its valve) is the top SPE reading in 100% of runs in the first hour and 22% over the whole window. Most of that whole window comes after reactor pressure reaches about 3000 kPa, close to the plant's published shutdown limit (not verified here), so the first-hour numbers are the fairer view and whole-window blame can be inflated by that tail.
@@ -75,12 +75,12 @@ All numbers are from the 500 testing runs per fault and the 500 fault-free testi
 | Model | F1 | F2 | F4 | F6 | F7 | F3 | F9 | F15 |
 |---|---|---|---|---|---|---|---|---|
 | PCA T² | 24 min (0% never) | 42 min (0% never) | 21 min (0% never) | 33 min (0% never) | 9 min (0% never) | 1161 min (83% never) | 1083 min (83% never) | 1078 min (79% never) |
-| PCA SPE | 15 min (0% never) | 57 min (0% never) | 12 min (0% never) | 9 min (0% never) | 9 min (0% never) | 1137 min (94% never) | 1137 min (95% never) | 1440 min (94% never) |
+| PCA SPE | 15 min (0% never) | 57 min (0% never) | 12 min (0% never) | 9 min (0% never) | 9 min (0% never) | 1137 min (94% never) | 1137 min over the 4.6% detected (95.4% never) | 1440 min (94% never) |
 | DPCA T² (L=2) | 24 min (0% never) | 42 min (0% never) | 50 min (2% never) | 27 min (0% never) | 9 min (0% never) | 996 min (49% never) | 958 min (48% never) | 936 min (41% never) |
-| DPCA SPE (L=2) | 18 min (0% never) | 69 min (0% never) | 9 min (0% never) | 9 min (0% never) | 9 min (0% never) | 876 min (99% never) | 876 min (99% never) | 664 min (100% never) |
+| DPCA SPE (L=2) | 18 min (0% never) | 69 min (0% never) | 9 min (0% never) | 9 min (0% never) | 9 min (0% never) | 876 min over the 0.6% detected (99.4% never) | 876 min over the 0.6% detected (99.4% never) | 664 min over the 0.4% detected (99.6% never) |
 | Isolation Forest L=0 | 27 min (0% never) | 93 min (0% never) | 849 min (45% never) | 30 min (0% never) | 15 min (0% never) | 1005 min (61% never) | 1017 min (59% never) | 954 min (54% never) |
 | Isolation Forest L=2 | 27 min (0% never) | 92 min (0% never) | 840 min (36% never) | 30 min (0% never) | 15 min (0% never) | 942 min (50% never) | 972 min (46% never) | 873 min (45% never) |
-| Autoencoder L=0 | 15 min (0% never) | 51 min (0% never) | 9 min (0% never) | 9 min (0% never) | 9 min (0% never) | 1578 min (96% never) | 1588 min (96% never) | 1444 min (94% never) |
+| Autoencoder L=0 | 15 min (0% never) | 51 min (0% never) | 9 min (0% never) | 9 min (0% never) | 9 min (0% never) | 1578 min over the 4.4% detected (95.6% never) | 1588 min over the 4.4% detected (95.6% never) | 1444 min (94% never) |
 | Autoencoder L=2 | 18 min (0% never) | 54 min (0% never) | 9 min (0% never) | 9 min (0% never) | 9 min (0% never) | 1098 min (95% never) | 1233 min (95% never) | 1098 min (93% never) |
 
 ### Supervised track (also uses labelled faults)
@@ -116,11 +116,11 @@ Peak RAM is for the whole script that scored the model, not for the model alone.
 - False-alarm streaks: the per-sample FAR is about 1% for every model, but alarms come in runs. The share of fault-free runs with a 3-in-a-row alarm after sample 160 is 50% for DPCA T², 39% to 51% for Isolation Forest and 35% for gradient boosting, against 5% for PCA SPE. A detection delay from a model with a high streak rate is therefore less trustworthy, and a run is easily "detected" by chance.
 - Faults 3, 9, 15 are not detected. The highest FDR on any of them is 0.021, against FARs near 0.01. For PCA T², 17% of fault-3 runs show a sustained alarm after the onset, and 17% of fault-free runs do. Gradient boosting's FDR on them (0.021, 0.016, 0.016) is a little above its FAR (0.011) and still nowhere near a detection; the phase 3 leak audit found no leak.
 
-**Caveats for the supervised row.** Gradient boosting was fitted on every 3rd row (row stride 3, all 50 supervised runs kept) to keep the tuning grid short; scoring, limits and tuning scores use every row. Its tuning used the development runs of all 20 faults. 2 of the 8 grid fits are degenerate (their 1% limit saturates at 1.0, so FDR reads about 0) and the selection rule discarded them. The train time (904 s) is one fit; the whole grid took 6528 s. A published unsupervised DPCA variant reaches a mean of 0.951 on 18 faults without 3, 9, 15 on the Braatz data (computed from `research/pca-anchors.md`), so 0.95 is not extraordinary.
+**Caveats for the supervised row.** Gradient boosting was fitted on every 3rd row (stride 3, all 50 supervised runs kept) to keep the tuning grid short; scoring, limits and tuning scores use every row. Its tuning used the development runs of all 20 faults. 2 of the 8 grid fits are degenerate (their 1% limit saturates at 1.0, so FDR reads about 0) and the selection rule discarded them. The train time (904 s) is one fit; the whole grid took 6528 s. Published supervised and unsupervised results near 0.9 or higher on the easy faults exist (hand-added from a published table in `research/pca-anchors.md`, not recomputed in code; the published table has 21 faults, ours 17 without 3, 9, 15), so a high mean on the easy faults is not unusual.
 
 Earlier figures that already show this: [PCA and DPCA per fault](../phase-2/figures/fdr-by-fault.png), [PCA SPE, Isolation Forest and autoencoder per fault](../phase-3/figures/fdr-by-fault-unsupervised.png).
 
-_Source: [`scorecard.csv`](../scorecard.csv), [`phase-3/hgb_tuning.csv`](../phase-3/hgb_tuning.csv), [`phase-3/models.json`](../phase-3/models.json)._ Plus `research/pca-anchors.md` for the 0.951.
+_Source: [`scorecard.csv`](../scorecard.csv), [`phase-3/hgb_tuning.csv`](../phase-3/hgb_tuning.csv), [`phase-3/models.json`](../phase-3/models.json)._ Plus `research/pca-anchors.md` for the published-results remark.
 
 ## Against the literature
 
@@ -174,9 +174,11 @@ The supervised model was retrained once without faults 1, 8, 13, 14 and 16 (the 
 | 16 | 0.513 | 0.852 | 0.256 | +0.258 |
 | Mean, 5 faults | 0.863 | 0.953 | 0.806 | +0.057 |
 
+The last column is the comparison the spec asked for (unseen supervised against PCA SPE on the five faults); it is not a ranking of the two tracks.
+
 - Without labels for them the supervised model flags 0.863 of samples on these five, against 0.953 when it saw them and 0.806 for PCA SPE.
-- **Fault 16 carries the gap.** It holds 90% of the unseen model's lead over PCA SPE. On faults 1, 8, 13 and 14 the two are within 0.031 of each other. Without fault 16 the means are 0.951 (unseen) and 0.944 (PCA SPE). Fault 14 is the other one labels clearly help: the unseen model drops from 0.999 to 0.921, no better than PCA SPE.
-- Caveats. The unseen model reuses the full model's settings, which were tuned with all 20 faults, including these five, so this test is mildly optimistic for the unseen model. Both supervised models are fitted on every 3rd row. It is one seed-42 split with one retrain, so there is no interval on these numbers. Fault 16's cause is unknown (Downs and Vogel give no description).
+- **Fault 16 carries the gap.** It holds 90% of the gap between the unseen model and PCA SPE. On faults 1, 8, 13 and 14 the two are within 0.031 of each other. Without fault 16 the means are 0.951 (unseen) and 0.944 (PCA SPE). Fault 14 is the other one labels clearly help: the unseen model drops from 0.999 to 0.921, no better than PCA SPE.
+- Caveats. The unseen model reuses the full model's settings, which were tuned with all 20 faults, including these five, so this test is mildly optimistic for the unseen model. Both supervised models are fitted on every 3rd row (stride 3). It is one seed-42 split with one retrain, so there is no interval on these numbers. Fault 16's cause is unknown (Downs and Vogel give no description).
 
 ![Unseen-fault test: supervised model with and without the five faults, and PCA SPE](../phase-3/figures/unseen-fault.png)
 
@@ -245,7 +247,7 @@ The other 16 faults have no run that reaches it. Among the 12 detectable faults 
   - Fault 8: top-5 hit rate 0.05 against 0.57 for random picking. SPE's top readings are Compressor work (xmeas_20); Stripper pressure (xmeas_16); Stripper steam valve (xmv_9).
   - Fault 10: top-5 hit rate 0.00 against 0.57 for random picking. SPE's top readings are Stripper temperature (xmeas_18); Stripper steam flow (xmeas_19); Stripper steam valve (xmv_9).
 
-These are results about contribution plots (symptoms, not causes), not a fault in the method.
+We read these as results about contribution plots (symptoms, not causes); we did not test other explanations.
 
 **Why faults 3, 9 and 15 hide.** Inside one run, we compare the 160 samples before the fault start with the 800 after, on three statistics: the largest shift of any reading (in standard deviations of normal runs), the largest change in spread and the largest change in autocorrelation. The control is 100 fault-free testing runs that share no noise stream with the faulty ones.
 
@@ -258,7 +260,7 @@ These are results about contribution plots (symptoms, not causes), not a fault i
 | 14 | 0.47 | 14.07 | 1.23 |
 | 19 | 0.47 | 2.58 | 0.39 |
 
-- Faults 3, 9, 15 sit at the control on all three: shift 0.46 to 0.47 against 0.47; spread 2.04 to 2.10 against 2.09; autocorrelation 0.24 to 0.25 against 0.25. There is no change inside the run for any monitor to find, and their blame hit rates (0.59, 0.69, 0.71) are near chance and mean nothing.
+- Faults 3, 9, 15 sit at the control on all three: shift 0.46 to 0.47 against 0.47; spread 2.04 to 2.10 against 2.09; autocorrelation 0.24 to 0.25 against 0.25. None of the three statistics we tested (mean shift, spread, autocorrelation) shows a change inside the run, and their blame hit rates (0.59, 0.69, 0.71) are near chance and mean nothing.
 - Caution: the headline check is mean shift, and faults 10, 11, 14, 16, 19 also match the control on it. Faults 14 and 19 are the clearest example: fault 14 is easy to detect and shows no mean shift (0.47 sd), but its spread ratio is 14.07 against 2.09. So mean shift alone proves nothing; for 3, 9, 15 all three statistics are at the control level, and that is what supports "hidden".
 
 ![Largest change in any reading per fault](../phase-4/figures/hidden-faults.png)
@@ -283,7 +285,7 @@ The assistant is Claude with one tool server that reads a replayed plant history
 
 - **Read v1.1 for what it is.** v1.1 adds `classify_fault`, a supervised closed-set classifier (gradient boosting trained on faults 1-20 plus normal). All 90 of 90 v1.1 test sessions used it, so there is no with-and-without comparison. The gain from 27 to 36 of 36 is "a trained classifier helps", not better reasoning, and v1.1 is not a reasoning-only score.
 - **Wide intervals.** With 36 headline cases the 95% intervals above are wide. The intervals for v1 and v1.1 do not overlap, and each fault has only three cases.
-- **Baselines.** The no-LLM baseline (15 of 36: unit of the top SPE reading) is below chance (18 of 36: always the most common unit), so the SPE reading alone is a poor guide to the plant area.
+- **Baselines.** The no-LLM baseline (15 of 36: unit of the top SPE reading) is not above chance (15/36 against 18/36 for always naming the most common unit; within noise at 36 cases), so the SPE reading alone is not a useful guide to the plant area.
 - **Faults 3, 9, 15.** The assistant answered "normal" or "can't tell" on all 9. That is the right answer for a fault with no visible change, and it is not a detection.
 - **Repeats.** 10 cases were run 3 times. v1: 9 of 10 cases agree on status and plant area; v1.1: 10 of 10. Headline numbers use the first run of each case.
 - **Cost.** v1 $4.19 for 90 sessions; v1.1 $2.88 for 90 sessions (API-equivalent cost reported by the CLI).
@@ -327,4 +329,4 @@ Run from the project folder, in this order. Python is the project venv.
 
 ## How this was made
 
-Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 34.3 s, peak RAM 1.78 GB (the whole script, including the one fault 6 testing run it reads).
+Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 18.3 s, peak RAM 2.28 GB (the whole script, including the one fault 6 testing run it reads).

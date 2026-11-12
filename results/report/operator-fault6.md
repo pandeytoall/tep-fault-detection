@@ -4,9 +4,9 @@ A simulated plant, public Tennessee Eastman data. One testing run of fault 6; ti
 
 ## Situation
 
-- The PCA SPE monitor raised its alarm at **8.1 h**: three samples in a row above its 1% limit (11.8).
-- The A feed was lost at **8.0 h**. The alarm came **0.1 h (6 minutes)** later.
-- SPE stayed above the limit in 100% of the samples after the alarm and peaked at 12,531, 1,062 times the limit; the alarm never cleared. One sample before the fault (sample 70) was above the limit; a single sample does not raise an alarm.
+- Alarm: PCA SPE raised it at **8.1 h** (3 samples in a row above its 1% limit of 11.8).
+- Fault start **8.0 h**, so the alarm came **0.1 h (6 minutes)** later.
+- After the alarm SPE stayed above the limit in 100% of samples (peak 1,062 times the limit); it never cleared.
 
 ![PCA SPE over the whole run with the alarm limit, the fault start and the alarm](figures/operator-fault6.png)
 
@@ -70,11 +70,11 @@ Why they differ: the main reason is the shutdown tail, not downstream spread. 86
 
 - Run: fault 6, simulation run 1, from `data/processed/TEP_Faulty_Testing.parquet` (local data, not in git). Run IDs: [`phase-4/test_runs.json`](../phase-4/test_runs.json).
 - Monitor: the saved PCA model, [`phase-2/pca.npz`](../phase-2/pca.npz) (no lags, 1% SPE limit 11.80, set on held-back normal training runs).
-- Alarm rule: three samples in a row above the limit; the alarm time is the third. Fault start 8.0 h: the first faulty sample is sample 161, stamped 8.0 h.
+- Alarm rule: three samples in a row above the limit; the alarm time is the third. One sample before the fault (sample 70) was above the limit; a single sample does not raise an alarm. Fault start 8.0 h: the first faulty sample is sample 161, stamped 8.0 h.
 - Normal band: 3 standard deviations of normal runs from the normal mean, three samples in a row. Normal mean and sd come from the 330 `fit` runs (the PCA scaler).
 - Blame for the 100 testing runs: [`phase-4/test_blame.csv`](../phase-4/test_blame.csv). The readings chosen above: [`phase-4/top_readings_6.csv`](../phase-4/top_readings_6.csv) (development runs). Delay over 500 runs: [`scorecard.csv`](../scorecard.csv).
 - Figures: [`figures/operator-fault6.png`](figures/operator-fault6.png), [`figures/operator-fault6-readings.png`](figures/operator-fault6-readings.png).
 
 ## How this was made
 
-Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 34.3 s, peak RAM 1.78 GB (the whole script, including the one fault 6 testing run it reads).
+Built by `scripts/make_report.py` on laptop, Intel i5-1135G7, 7.7 GB RAM. Runtime 18.3 s, peak RAM 2.28 GB (the whole script, including the one fault 6 testing run it reads).
