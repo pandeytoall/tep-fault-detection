@@ -1,0 +1,22 @@
+fault,group,n_runs,median_max_abs_shift,median_n_shift_gt_1sd,median_max_spread_ratio,median_max_abs_dacf,most_common_top_reading,effect_vs_control,verdict,note,machine,runtime_s,peak_ram_gb
+0,control,100,0.474796181635335,0.0,2.092825408525297,0.24784936504433935,xmeas_19,1.0,control (the noise floor),,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+1,benchmark,100,16.455973884380654,11.0,7.901978195142284,0.730551112350118,xmeas_1,34.659027432995636,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+2,benchmark,100,28.424134932734198,24.0,9.765201373861053,0.5613768082210758,xmeas_34,59.865972036323626,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+3,hidden,100,0.46992437609934756,0.0,2.0377717334249272,0.24311784692404428,xmeas_19,0.9897391644574572,looks like the fault-free control,near the false-alarm level; blame is mostly noise,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+4,benchmark,100,6.947551441919222,1.0,2.050720413086057,0.35673496081677736,xmv_10,14.632702853653647,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+5,the rest,100,1.8752297702542762,1.0,4.985492282753485,0.5968630336921239,xmv_11,3.949546864078485,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+6,benchmark,100,82.86094588125681,38.0,64.86287223196658,1.1804587649193068,xmv_10,174.51898116758187,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+7,benchmark,100,12.299853371523014,1.0,9.265505652541927,0.8651115549721553,xmv_4,25.90554399396973,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+8,the rest,100,2.78842978456232,10.0,14.10157569861203,0.9259454328998283,xmeas_34,5.872898503433965,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+9,hidden,100,0.46513555044432664,0.0,2.1025744163428186,0.2525314032325811,xmeas_19,0.9796530983932213,looks like the fault-free control,near the false-alarm level; blame is mostly noise,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+10,the rest,100,0.5403387368543049,0.0,5.565180347162537,0.42200580472957305,xmeas_19,1.1380435600666003,looks like the fault-free control,,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+11,the rest,100,0.661000314969229,0.0,6.577923291787346,1.0729186495364644,xmv_10,1.3921769814840406,looks like the fault-free control,,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+12,the rest,100,2.9047172799672447,4.0,15.848713244270686,1.068086618753048,xmv_9,6.11781937664823,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+13,the rest,100,5.24761197754186,10.0,22.66935395936878,0.9208269047084734,xmv_9,11.052346628963129,"clear shift, well above the control",,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+14,the rest,100,0.4657257492778423,0.0,14.072191565938121,1.2266865972481362,xmeas_19,0.9808961556382962,looks like the fault-free control,,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+15,hidden,100,0.4616428810637399,0.0,2.100545927362658,0.25131730380174183,xmeas_19,0.9722969537659479,looks like the fault-free control,near the false-alarm level; blame is mostly noise,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+16,unknown cause,100,0.5143698351097208,0.0,4.279498795552997,0.33978138830130267,xmv_9,1.083348718892563,looks like the fault-free control,unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+17,unknown cause,100,29.098692671579506,2.0,31.27067779404709,1.0017582706013668,xmeas_21,61.286703215167435,"clear shift, well above the control",unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+18,unknown cause,100,69.94256674104054,43.0,57.77603872937506,1.1797126058675382,xmv_5,147.31071867540754,"clear shift, well above the control",unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+19,unknown cause,100,0.46695501745322787,0.0,2.575288539603247,0.38688397348006853,xmeas_19,0.9834851995753212,looks like the fault-free control,unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97
+20,unknown cause,100,4.270022309998604,3.0,5.375516524986097,0.41546859204887565,xmv_5,8.99337963353331,"clear shift, well above the control",unknown cause,"laptop, Intel i5-1135G7, 7.7 GB RAM",74.1,1.97

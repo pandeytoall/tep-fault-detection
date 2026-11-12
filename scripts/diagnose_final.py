@@ -35,6 +35,7 @@ PLANT_UNIT_ORDER = ["feed", "reactor", "condenser", "separator", "compressor", "
 CHART_METHODS = ("spe", "t2", "rbc_spe", "perm")
 COLOURS = {"spe": style.OKABE_ITO["vermillion"], "t2": style.OKABE_ITO["blue"], "rbc_spe": style.OKABE_ITO["bluish_green"],
            "perm": style.OKABE_ITO["black"], "random": "0.55"}
+OFFSETS = {"spe": -0.18, "t2": -0.06, "rbc_spe": 0.06, "perm": 0.18}   # a small vertical offset keeps overlapping dots visible
 MARKERS = {"spe": "o", "t2": "s", "rbc_spe": "D", "perm": "^"}
 
 
@@ -101,7 +102,7 @@ def plot_methods(test_blame, dev_blame, path):
                label="Random picks")
     labels = {"spe": "SPE (test)", "t2": "T² (test)", "rbc_spe": "RBC-SPE (test)", "perm": "Permutation importance (dev)"}
     for m in CHART_METHODS:
-        ax.scatter([hit[m][f] for f in faults], range(len(faults)), color=COLOURS[m], marker=MARKERS[m], s=55, zorder=3, label=labels[m])
+        ax.scatter([hit[m][f] for f in faults], np.arange(len(faults)) + OFFSETS[m], color=COLOURS[m], marker=MARKERS[m], s=55, zorder=3, label=labels[m])
     ax.set_yticks(range(len(faults)), [f"Fault {f}" + (" (hidden)" if f in diagnosis.HIDDEN_FAULTS else "") for f in faults])
     ax.invert_yaxis()
     ax.set_xlim(-0.03, 1.05)
@@ -119,8 +120,8 @@ def plot_hidden(hidden, path):
     order = list(range(1, 21)) + [0]
     colour = lambda f: COLOURS["perm"] if f == 0 else style.OKABE_ITO["vermillion"] if f in diagnosis.HIDDEN_FAULTS else style.OKABE_ITO["sky_blue"]  # noqa: E731
     h = [shifts[f] for f in diagnosis.HIDDEN_FAULTS]
-    title = (f"Faults 3, 9 and 15 move a reading by {min(h):.1f} to {max(h):.1f} sd at most,\n"
-             f"the same as a fault-free run ({control:.1f} sd; median over dev runs)")
+    title = (f"Faults 3, 9 and 15 move a reading by at most {max(h):.2f} sd, the same\n"
+             f"as a fault-free run ({control:.2f} sd; median over dev runs)")
     fig, ax = style.new_figure(figsize=(8, 9), font_size=13)
     ax.axvline(control, color="0.5", ls="--", lw=1.3, zorder=1)
     ax.scatter([shifts[f] for f in order], range(len(order)), c=[colour(f) for f in order], s=70, zorder=2)
