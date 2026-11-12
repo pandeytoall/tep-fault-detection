@@ -36,8 +36,8 @@ def plot_detection_by_family(rows, path, spread=0.25):
     frame = pd.DataFrame({family: rows[name]["fdr"].reindex(faults) for family, name in best.items()})
     hard = list(report.HARD_FAULTS)
     wide = [f for f in faults if f not in hard and frame.loc[f].max() - frame.loc[f].min() >= spread]
-    title = (f"All four model families flag at most {frame.loc[hard].to_numpy().max():.2f} of faults 3, 9 and 15;\n"
-             f"they differ most on faults {', '.join(map(str, wide))} (1% limit)")
+    title = (f"All four model families flag at most {frame.loc[hard].to_numpy().max():.2f} of faults 3, 9\n"
+             f"and 15 (1% limit). They differ by {spread:.2f} or more\non faults {', '.join(map(str, wide))}")
     fig, ax = style.new_figure(figsize=(8, 9), font_size=13)
     for i, f in enumerate(faults):
         ax.plot([frame.loc[f].min(), frame.loc[f].max()], [i, i], color="0.85", lw=2, zorder=1)
@@ -50,7 +50,7 @@ def plot_detection_by_family(rows, path, spread=0.25):
     ax.set_xlim(-0.03, 1.05)
     ax.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
     ax.set_xlabel("Fault detection rate (share of post-onset samples flagged)")
-    ax.legend(loc="lower center", bbox_to_anchor=(0.42, -0.30), ncol=2, frameon=False, fontsize=10, handletextpad=0.2, columnspacing=0.9)
+    ax.legend(loc="lower center", bbox_to_anchor=(0.42, -0.2), ncol=2, frameon=False, fontsize=10, handletextpad=0.2, columnspacing=0.9)
     style.finish_figure(fig, ax, title, path, title_size=13)
 
 
