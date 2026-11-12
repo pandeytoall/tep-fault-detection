@@ -134,7 +134,7 @@ def _rows(answers, key, baseline):
     return pd.DataFrame(rows).sort_values(["case_id", "repeat"], kind="stable").reset_index(drop=True)
 
 
-def _agreement(rows):
+def agreement(rows):
     """{'k', 'n', 'warning'} over cases run more than once, or None if there are none."""
     multi = [g for _, g in rows.groupby("case_id") if len(g) > 1]
     if not multi:
@@ -187,7 +187,7 @@ def score(answers, key, baseline):
     summary.update({
         "hard_exact": sorted(hard[hard["unit_correct"] & hard["idv_top1"]].index),
         "chance": _chance(headline["true_unit"]),
-        "agreement": _agreement(rows),
+        "agreement": agreement(rows),
         "unparseable": [(r.case_id, r.repeat) for r in rows[~rows["parsed_ok"]].itertuples()],
     })
     return rows, summary
